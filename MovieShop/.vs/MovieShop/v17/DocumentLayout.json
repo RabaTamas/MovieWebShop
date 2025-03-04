@@ -1,0 +1,190 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\shoppingcartmovie.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\shoppingcartmovie.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\movie.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\movie.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\ordermovie.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\ordermovie.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\shoppingcart.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\shoppingcart.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\review.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\review.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\moviecategory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\moviecategory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\moviewebshop\\movieshop\\models\\address.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B805EA74-B4A1-46FE-97C2-4F4E23B3F88B}|MovieShop.csproj|solutionrelative:models\\address.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\User.cs",
+              "RelativeDocumentMoniker": "Models\\User.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\User.cs",
+              "RelativeToolTip": "Models\\User.cs",
+              "ViewState": "AQIAAAMAAAAAAAAAAAAAAAoAAAANAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T22:06:44.634Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ShoppingCartMovie.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\ShoppingCartMovie.cs",
+              "RelativeDocumentMoniker": "Models\\ShoppingCartMovie.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\ShoppingCartMovie.cs",
+              "RelativeToolTip": "Models\\ShoppingCartMovie.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA8AAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T22:06:27.637Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "OrderMovie.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\OrderMovie.cs",
+              "RelativeDocumentMoniker": "Models\\OrderMovie.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\OrderMovie.cs",
+              "RelativeToolTip": "Models\\OrderMovie.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAQAAAAoAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T22:05:35.574Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "MovieCategory.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\MovieCategory.cs",
+              "RelativeDocumentMoniker": "Models\\MovieCategory.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\MovieCategory.cs",
+              "RelativeToolTip": "Models\\MovieCategory.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T22:04:55.934Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Movie.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Movie.cs",
+              "RelativeDocumentMoniker": "Models\\Movie.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Movie.cs",
+              "RelativeToolTip": "Models\\Movie.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABUAAAA1AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T22:04:10.673Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Address.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Address.cs",
+              "RelativeDocumentMoniker": "Models\\Address.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Address.cs",
+              "RelativeToolTip": "Models\\Address.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABsAAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T22:02:09.685Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Category.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Category.cs",
+              "RelativeDocumentMoniker": "Models\\Category.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Category.cs",
+              "RelativeToolTip": "Models\\Category.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T12:30:03.256Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Order.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Order.cs",
+              "RelativeDocumentMoniker": "Models\\Order.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Order.cs",
+              "RelativeToolTip": "Models\\Order.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAvAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T12:29:32.289Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ShoppingCart.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\ShoppingCart.cs",
+              "RelativeDocumentMoniker": "Models\\ShoppingCart.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\ShoppingCart.cs",
+              "RelativeToolTip": "Models\\ShoppingCart.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA0AAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T12:28:55.534Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Review.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Review.cs",
+              "RelativeDocumentMoniker": "Models\\Review.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MovieWebShop\\MovieShop\\Models\\Review.cs",
+              "RelativeToolTip": "Models\\Review.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABEAAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-04T12:27:19.163Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
