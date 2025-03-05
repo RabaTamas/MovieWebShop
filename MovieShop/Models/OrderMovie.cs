@@ -10,7 +10,7 @@
 
         public int Quantity { get; set; } = 1;
 
-        public decimal PriceAtOrder { get; set; }
+        public int PriceAtOrder { get; set; }
 
     }
 }

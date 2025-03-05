@@ -17,11 +17,11 @@ namespace MovieShop.Models
         public string ImageUrl { get; set; } = string.Empty;
 
         [Required]
-        public decimal Price { get; set; }
+        public int Price { get; set; }
 
-        public decimal? DiscountedPrice { get; set; }
+        public int? DiscountedPrice { get; set; }
 
-        public List<MovieCategory>? MovieCategories { get; set; }
+        public List<Category>? Categories { get; set; }
         public List<OrderMovie>? OrderMovies { get; set; }
 
         public List<ShoppingCartMovie>? ShoppingCartMovies { get; set; }

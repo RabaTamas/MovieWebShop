@@ -19,11 +19,8 @@ namespace MovieShop.Models
         public int UserId { get; set; }
         public User? User { get; set; }
 
-        public int? BillingOrderId { get; set; }
-        public Order? BillingOrder { get; set; }
-
-        public int? ShippingOrderId { get; set; }
-        public Order? ShippingOrder { get; set; }
+        public List<Order> BillingOrders { get; set; } = new();
+        public List<Order> ShippingOrders { get; set; } = new();
 
     }
 }
