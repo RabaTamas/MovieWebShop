@@ -1,0 +1,96 @@
+﻿/* App container styling */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    /* Remove any possible margin or padding that could create space */
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Main content area that will expand to fill available space */
+.main-content {
+    flex: 1;
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    /* Allow content to scroll if it overflows */
+    overflow-y: auto;
+    /* Override any potential bottom margin or padding */
+    margin-bottom: 0;
+    padding-bottom: 0;
+    /* Override min-height if one was set by the template */
+    min-height: 0;
+}
+
+/* Add styling for page-specific containers */
+.page-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    /* Ensure there's no bottom spacing */
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Style for forms to prevent them from taking too much width on larger screens */
+.form-container {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Fix for template's footer spacing that might be causing the black bar */
+footer {
+    margin: 0;
+    padding: 0;
+    height: auto;
+}
+
+/* Remove any potential padding or margin from bottom elements in the template */
+body::after {
+    display: none !important;
+}
+
+/* Override any potential :after pseudo-elements that might add space */
+div::after,
+section::after,
+main::after,
+#root::after,
+.container::after,
+.container-fluid::after {
+    content: none !important;
+}
+
+/* Override any bottom margin added by the bootstrap template */
+.py-5 {
+    padding-bottom: 0 !important;
+}
+
+/* Reset potentially problematic elements from the template */
+body {
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 10px;
+    }
+}

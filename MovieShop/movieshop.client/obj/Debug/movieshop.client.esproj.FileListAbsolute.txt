@@ -1,0 +1,2 @@
+C:\Users\User\Documents\MSC önlab\MovieShop\movieshop.client\obj\Debug\movieshop.client.esproj.CoreCompileInputs.cache
+C:\Users\User\Documents\MSC önlab\MovieWebShop\MovieShop\movieshop.client\obj\Debug\movieshop.client.esproj.CoreCompileInputs.cache
