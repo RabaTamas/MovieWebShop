@@ -23,7 +23,7 @@ import AdminShoppingCarts from './pages/AdminShoppingCarts';
 import NotFound from './pages/NotFound'; 
 import Unauthorized from './pages/Unauthorized';
 import AdminAddresses from './pages/AdminAddresses';
-
+import About from './pages/About';
 function App() {
     return (
         <Router>
@@ -34,10 +34,12 @@ function App() {
                         <Routes>
                             {/* Public routes */}
                             <Route path="/" element={<Home />} />
+                            <Route path="/about" element={<About />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
                             <Route path="/movies/:id" element={<MovieDetails />} />
                             <Route path="/unauthorized" element={<Unauthorized />} />
+                            
 
                             {/* Protected user routes */}
                             <Route
