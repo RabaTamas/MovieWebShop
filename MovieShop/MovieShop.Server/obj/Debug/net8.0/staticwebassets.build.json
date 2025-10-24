@@ -1,13 +1,13 @@
 {
   "Version": 1,
-  "Hash": "0uy/ogL6djN1de2mqWkdfNZfNw2oBHgh62vYi9QNh28=",
+  "Hash": "qhI7A+DeTSHjxjWNTbzBa8bBFKd1i/x8Zer87ZsaRhY=",
   "Source": "MovieShop.Server",
   "BasePath": "_content/MovieShop.Server",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [
     {
-      "Identity": "C:\\Users\\User\\Downloads\\Proba_webshop\\MovieWebShop\\MovieShop\\movieshop.client\\movieshop.client.esproj",
+      "Identity": "C:\\Users\\User\\Documents\\MSC önlab\\MScÖnlab2025ősz\\MovieWebShop\\MovieShop\\movieshop.client\\movieshop.client.esproj",
       "Version": 2,
       "Source": "movieshop.client",
       "GetPublishAssetsTargets": "GetCurrentProjectPublishStaticWebAssetItems",

@@ -34,6 +34,7 @@ namespace MovieShop.Server.Extensions
                 if (adminUser == null)
                 {
                     // Create admin user
+
                     var admin = new User
                     {
                         UserName = "Admin",

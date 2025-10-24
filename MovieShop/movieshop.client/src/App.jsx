@@ -24,6 +24,7 @@ import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 import AdminAddresses from './pages/AdminAddresses';
 import About from './pages/About';
+import Chatbot from './components/Chatbot';
 function App() {
     return (
         <Router>
@@ -162,6 +163,7 @@ function App() {
                             <Route path="*" element={<NotFound />} />
                         </Routes>
                     </div>
+                    <Chatbot />
                 </div>
             </AuthProvider>
         </Router>

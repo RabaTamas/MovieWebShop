@@ -12,12 +12,16 @@ using MovieShop.Server.Services.Interfaces;
 using MovieShop.Server.Extensions;
 using MovieShop.Server.Services.Implementations.TMDB;
 using MovieShop.Server.Services.Interfaces.TMDB;
+using Stripe;
+using MovieShop.Server.Services.Implementations.Stripe;
+using MovieShop.Server.Services.Interfaces.Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 
 // Add services to the container.
@@ -57,13 +61,18 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IReviewService, MovieShop.Server.Services.Implementations.ReviewService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddHttpClient<ITmdbService, TmdbService>();
 builder.Services.AddScoped<IAdminAddressService, AdminAddressService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddSingleton<IConversationService, ConversationService>();
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<IStripeService, StripeService>();
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
