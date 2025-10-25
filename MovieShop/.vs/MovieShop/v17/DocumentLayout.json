@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\services\\implementations\\conversationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|solutionrelative:movieshop.server\\services\\implementations\\conversationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|solutionrelative:movieshop.server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\services\\implementations\\chatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|solutionrelative:movieshop.server\\services\\implementations\\chatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -21,10 +29,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\services\\interfaces\\ichatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|solutionrelative:movieshop.server\\services\\interfaces\\ichatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\services\\implementations\\conversationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|solutionrelative:movieshop.server\\services\\implementations\\conversationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\services\\interfaces\\iconversationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -77,10 +81,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\services\\implementations\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|solutionrelative:movieshop.server\\services\\implementations\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{80C5579D-CCFD-40CA-A849-A7F99C272E0B}|MovieShop.Server\\MovieShop.Server.csproj|solutionrelative:movieshop.server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{3043BFAF-B714-4F35-AF2E-475CA1F9ADBC}|movieshop.client\\movieshop.client.esproj|c:\\users\\user\\documents\\msc \u00F6nlab\\msc\u00F6nlab2025\u0151sz\\moviewebshop\\movieshop\\movieshop.client\\src\\components\\chatbot.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
@@ -270,7 +270,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 10,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -290,33 +290,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Program.cs",
-              "RelativeDocumentMoniker": "MovieShop.Server\\Program.cs",
-              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Program.cs",
-              "RelativeToolTip": "MovieShop.Server\\Program.cs",
-              "ViewState": "AQIAAGAAAAAAAAAAAAAAAD0AAAA6AAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-24T16:09:46.602Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "ConversationService.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Implementations\\ConversationService.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Services\\Implementations\\ConversationService.cs",
               "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Implementations\\ConversationService.cs",
               "RelativeToolTip": "MovieShop.Server\\Services\\Implementations\\ConversationService.cs",
-              "ViewState": "AQIAACwAAAAAAAAAAAAgwD0AAAAFAAAA",
+              "ViewState": "AQIAACwAAAAAAAAAAAAgwDgAAAAtAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-24T16:02:55.848Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "IConversationService.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Interfaces\\IConversationService.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Services\\Interfaces\\IConversationService.cs",
@@ -324,12 +311,11 @@
               "RelativeToolTip": "MovieShop.Server\\Services\\Interfaces\\IConversationService.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAsAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-24T16:01:35.885Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-24T16:01:35.885Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "ConversationHistory.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Models\\ConversationHistory.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Models\\ConversationHistory.cs",
@@ -337,12 +323,11 @@
               "RelativeToolTip": "MovieShop.Server\\Models\\ConversationHistory.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-24T15:59:46.478Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-24T15:59:46.478Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "ChatController.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Controllers\\ChatController.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Controllers\\ChatController.cs",
@@ -350,12 +335,11 @@
               "RelativeToolTip": "MovieShop.Server\\Controllers\\ChatController.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAACMAAAAJAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-14T14:25:34.175Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-14T14:25:34.175Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "Chatbot.jsx",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\movieshop.client\\src\\components\\Chatbot.jsx",
               "RelativeDocumentMoniker": "movieshop.client\\src\\components\\Chatbot.jsx",
@@ -363,25 +347,47 @@
               "RelativeToolTip": "movieshop.client\\src\\components\\Chatbot.jsx",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAA8AAAAiAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2025-10-14T14:24:24.04Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-14T14:24:24.04Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "ChatService.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Implementations\\ChatService.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Services\\Implementations\\ChatService.cs",
               "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Implementations\\ChatService.cs",
               "RelativeToolTip": "MovieShop.Server\\Services\\Implementations\\ChatService.cs",
-              "ViewState": "AQIAAIUAAAAAAAAAAAAAAJMAAAAAAAAA",
+              "ViewState": "AQIAAPYAAAAAAAAAAAAgwJAAAAANAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-14T22:52:47.941Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-14T22:52:47.941Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\appsettings.json",
+              "RelativeDocumentMoniker": "MovieShop.Server\\appsettings.json",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\appsettings.json",
+              "RelativeToolTip": "MovieShop.Server\\appsettings.json",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABAAAAAEAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-10-12T10:01:39.863Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Program.cs",
+              "RelativeDocumentMoniker": "MovieShop.Server\\Program.cs",
+              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Program.cs",
+              "RelativeToolTip": "MovieShop.Server\\Program.cs",
+              "ViewState": "AQIAAGAAAAAAAAAAAAAAAD0AAAA6AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-24T16:09:46.602Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "ConversationMessage.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Models\\ConversationMessage.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Models\\ConversationMessage.cs",
@@ -389,12 +395,11 @@
               "RelativeToolTip": "MovieShop.Server\\Models\\ConversationMessage.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAQAAAA4AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-24T15:59:17.477Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-24T15:59:17.477Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "IChatService.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Interfaces\\IChatService.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Services\\Interfaces\\IChatService.cs",
@@ -402,12 +407,11 @@
               "RelativeToolTip": "MovieShop.Server\\Services\\Interfaces\\IChatService.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-14T22:50:59.555Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-14T22:50:59.555Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 12,
               "Title": "OrderController.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Controllers\\OrderController.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Controllers\\OrderController.cs",
@@ -415,12 +419,11 @@
               "RelativeToolTip": "MovieShop.Server\\Controllers\\OrderController.cs",
               "ViewState": "AQIAADMAAAAAAAAAAAAYwEkAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-12T14:45:21.007Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-12T14:45:21.007Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 17,
               "Title": "OrdersController.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Controllers\\OrdersController.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Controllers\\OrdersController.cs",
@@ -432,7 +435,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 13,
               "Title": "PaymentRequest.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Models\\PaymentRequest.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Models\\PaymentRequest.cs",
@@ -440,12 +443,11 @@
               "RelativeToolTip": "MovieShop.Server\\Models\\PaymentRequest.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAYAAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-12T12:32:49.998Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-12T12:32:49.998Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 15,
               "Title": "CategoryService.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Implementations\\CategoryService.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Services\\Implementations\\CategoryService.cs",
@@ -457,7 +459,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 18,
               "Title": "MovieController.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Controllers\\MovieController.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Controllers\\MovieController.cs",
@@ -469,7 +471,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 11,
               "Title": "User.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Models\\User.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Models\\User.cs",
@@ -477,12 +479,11 @@
               "RelativeToolTip": "MovieShop.Server\\Models\\User.cs",
               "ViewState": "AQIAABsAAAAAAAAAAAAAAC4AAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-12T14:56:07.922Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-12T14:56:07.922Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 10,
               "Title": "UserRoles.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Constants\\UserRoles.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Constants\\UserRoles.cs",
@@ -490,12 +491,11 @@
               "RelativeToolTip": "MovieShop.Server\\Constants\\UserRoles.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-11T14:15:50.344Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-11T14:15:50.344Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 14,
               "Title": "ReviewService.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Implementations\\ReviewService.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Services\\Implementations\\ReviewService.cs",
@@ -507,7 +507,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 16,
               "Title": "ReviewController.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Controllers\\ReviewController.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Controllers\\ReviewController.cs",
@@ -543,18 +543,6 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\appsettings.json",
-              "RelativeDocumentMoniker": "MovieShop.Server\\appsettings.json",
-              "ToolTip": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\appsettings.json",
-              "RelativeToolTip": "MovieShop.Server\\appsettings.json",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAABUAAABHAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-10-12T10:01:39.863Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 27,
               "Title": "App.jsx",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\movieshop.client\\src\\App.jsx",
@@ -567,7 +555,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 19,
               "Title": "OrderService.cs",
               "DocumentMoniker": "C:\\Users\\User\\Documents\\MSC \u00F6nlab\\MSc\u00D6nlab2025\u0151sz\\MovieWebShop\\MovieShop\\MovieShop.Server\\Services\\Implementations\\OrderService.cs",
               "RelativeDocumentMoniker": "MovieShop.Server\\Services\\Implementations\\OrderService.cs",

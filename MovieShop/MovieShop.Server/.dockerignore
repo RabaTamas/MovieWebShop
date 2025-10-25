@@ -1,0 +1,42 @@
+# ==============================================
+# Backend .dockerignore
+# Exclude files from Docker build context
+# ==============================================
+
+# Build outputs
+bin/
+obj/
+out/
+
+# Visual Studio / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Test files
+**/TestResults/
+**/*.Tests/
