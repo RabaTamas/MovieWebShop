@@ -1,4 +1,66 @@
+# ==============================================
+# MovieWebShop .gitignore
+# ==============================================
+
+# ===== Environment Variables (SECRETS!) =====
+.env
+.env.local
+.env.*.local
+*.env
+
+# Keep example files
+!.env.example
+
+# ===== .NET / ASP.NET Core =====
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Configuration files with secrets
 MovieShop/MovieShop.Server/appsettings.json
-MovieShop/MovieShop.Server/appsettings.json
-MovieShop/MovieShop.Server/appsettings.json
+MovieShop/MovieShop.Server/appsettings.*.json
+!MovieShop/MovieShop.Server/appsettings.Development.json
 MovieShop/MovieShop.Server/bin/Debug/net8.0/appsettings.json
+
+# ===== Node.js / React =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# React build output
+dist/
+dist-ssr/
+*.local
+
+# ===== Docker =====
+# Ignore local docker overrides
+docker-compose.override.yml
+
+# ===== Operating System =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
