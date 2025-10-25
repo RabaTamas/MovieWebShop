@@ -18,10 +18,17 @@ using MovieShop.Server.Services.Interfaces.Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
-StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+// Load configuration from appsettings.json and environment variables
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "MovieShop";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "MovieShopClient";
+
+// Stripe configuration
+var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+if (!string.IsNullOrEmpty(stripeSecretKey))
+{
+    StripeConfiguration.ApiKey = stripeSecretKey;
+}
 
 
 // Add services to the container.
@@ -77,13 +84,19 @@ builder.Services.AddScoped<IStripeService, StripeService>();
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 builder.Services.AddControllers();
+
+// Configure CORS with environment-based origins
+var allowedOrigins = builder.Configuration["CORS:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+    ?? new[] { "https://localhost:5173" };
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("https://localhost:5173")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
