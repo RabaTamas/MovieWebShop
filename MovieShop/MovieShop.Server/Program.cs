@@ -125,6 +125,37 @@ app.MapControllers();
 
 app.MapFallbackToFile("/index.html");
 
+// Initialize database
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+
+        logger.LogInformation("🔄 Creating database schema...");
+
+        // Use EnsureCreated instead of Migrate (creates schema without migrations)
+        var created = await context.Database.EnsureCreatedAsync();
+
+        if (created)
+        {
+            logger.LogInformation("✅ Database created successfully.");
+        }
+        else
+        {
+            logger.LogInformation("ℹ️ Database already exists.");
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "❌ An error occurred while creating the database.");
+        throw;
+    }
+}
+
 await app.SeedRolesAndAdminAsync();
 
 app.Run();
