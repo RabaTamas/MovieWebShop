@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { UserRoles } from "../constants/UserRoles";
+import API_BASE_URL from '../config/api';
 
 const AdminUsers = () => {
     const { token } = useAuth();
@@ -12,7 +13,7 @@ const AdminUsers = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch(`https://localhost:7289/api/user/all`, {
+                const response = await fetch(`${API_BASE_URL}/api/user/all`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -51,8 +52,8 @@ const AdminUsers = () => {
 
         try {
             const endpoint = makeAdmin
-                ? `https://localhost:7289/api/auth/make-admin/${userId}`
-                : `https://localhost:7289/api/auth/remove-admin/${userId}`;
+                ? `${API_BASE_URL}/api/auth/make-admin/${userId}`
+                : `${API_BASE_URL}/api/auth/remove-admin/${userId}`;
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -84,7 +85,7 @@ const AdminUsers = () => {
         }
 
         try {
-            const response = await fetch(`https://localhost:7289/api/user/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

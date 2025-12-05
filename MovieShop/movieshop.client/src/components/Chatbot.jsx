@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import './Chatbot.css';
+import API_BASE_URL from '../config/api';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +35,7 @@ const Chatbot = () => {
         setLoading(true);
 
         try {
-            const response = await fetch('https://localhost:7289/api/Chat/ask', {
+            const response = await fetch('${API_BASE_URL}/api/Chat/ask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

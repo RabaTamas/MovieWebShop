@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import ProductSection from "../components/ProductSection";
 import ReviewList from "../components/ReviewList";
+import API_BASE_URL from '../config/api';
 
 const MovieDetails = () => {
     const { id } = useParams();
@@ -13,7 +14,7 @@ const MovieDetails = () => {
 
     useEffect(() => {
         setLoading(true);
-        fetch(`https://localhost:7289/api/Movie/${id}`)
+        fetch(`${API_BASE_URL}/api/Movie/${id}`)
             .then((res) => {
                 if (!res.ok) {
                     throw new Error("Movie not found");
@@ -38,7 +39,7 @@ const MovieDetails = () => {
         }
 
         try {
-            const response = await fetch("https://localhost:7289/api/ShoppingCart/add", {
+            const response = await fetch("${API_BASE_URL}/api/ShoppingCart/add", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

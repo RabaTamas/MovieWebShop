@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import API_BASE_URL from '../config/api';
 
 const MovieCategories = () => {
     const { id } = useParams();
@@ -19,7 +20,7 @@ const MovieCategories = () => {
         const fetchData = async () => {
             try {
                 // Fetch movie details
-                const movieResponse = await fetch(`https://localhost:7289/api/movie/${id}`, {
+                const movieResponse = await fetch(`${API_BASE_URL}/api/movie/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -33,7 +34,7 @@ const MovieCategories = () => {
                 setMovie(movieData);
 
                 // Fetch all categories
-                const categoriesResponse = await fetch('https://localhost:7289/api/category', {
+                const categoriesResponse = await fetch('${API_BASE_URL}/api/category', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -68,7 +69,7 @@ const MovieCategories = () => {
         try {
             const isAssigned = isMovieCategoryAssigned(categoryId);
 
-            const response = await fetch(`https://localhost:7289/api/movie/${id}/category/${categoryId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/movie/${id}/category/${categoryId}`, {
                 method: isAssigned ? 'DELETE' : 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`

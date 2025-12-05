@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import API_BASE_URL from '../config/api';
 
 const AdminMovies = () => {
     const { token } = useAuth();
@@ -20,13 +21,13 @@ const AdminMovies = () => {
                 // Select endpoint based on view mode
                 switch (viewMode) {
                     case "deleted":
-                        endpoint = "https://localhost:7289/api/movie/admin/deleted";
+                        endpoint = "${API_BASE_URL}/api/movie/admin/deleted";
                         break;
                     case "all":
-                        endpoint = "https://localhost:7289/api/movie/admin/all";
+                        endpoint = "${API_BASE_URL}/api/movie/admin/all";
                         break;
                     default:
-                        endpoint = "https://localhost:7289/api/movie"; // Active movies only
+                        endpoint = "${API_BASE_URL}/api/movie"; // Active movies only
                         break;
                 }
 
@@ -77,7 +78,7 @@ const AdminMovies = () => {
         }
 
         try {
-            const deleteUrl = `https://localhost:7289/api/movie/${id}`;
+            const deleteUrl = `${API_BASE_URL}/api/movie/${id}`;
             const response = await fetch(deleteUrl, {
                 method: 'DELETE',
                 headers: {
@@ -101,7 +102,7 @@ const AdminMovies = () => {
 
     const handleRestoreMovie = async (id) => {
         try {
-            const restoreUrl = `https://localhost:7289/api/movie/${id}/restore`;
+            const restoreUrl = `${API_BASE_URL}/api/movie/${id}/restore`;
             const response = await fetch(restoreUrl, {
                 method: 'PATCH',
                 headers: {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import API_BASE_URL from '../config/api';
 
 const AdminAddresses = () => {
     const { token } = useAuth();
@@ -17,7 +18,7 @@ const AdminAddresses = () => {
     useEffect(() => {
         const fetchAddresses = async () => {
             try {
-                const response = await fetch(`https://localhost:7289/api/admin/addresses`, {
+                const response = await fetch(`${API_BASE_URL}/api/admin/addresses`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -76,7 +77,7 @@ const AdminAddresses = () => {
         }
 
         try {
-            const response = await fetch(`https://localhost:7289/api/admin/addresses/${addressId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/addresses/${addressId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -110,7 +111,7 @@ const AdminAddresses = () => {
         }
 
         try {
-            const response = await fetch(`https://localhost:7289/api/admin/addresses/${addressId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/addresses/${addressId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

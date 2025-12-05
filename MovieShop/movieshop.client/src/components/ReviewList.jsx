@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from '../config/api';
 
 const ReviewList = ({ movieId }) => {
     const [reviews, setReviews] = useState([]);
@@ -14,7 +15,7 @@ const ReviewList = ({ movieId }) => {
 
     const fetchReviews = async () => {
         try {
-            const res = await fetch(`https://localhost:7289/api/Review/movie/${movieId}`);
+            const res = await fetch(`${API_BASE_URL}/api/Review/movie/${movieId}`);
             if (!res.ok) throw new Error("Failed to fetch reviews");
             const data = await res.json();
             setReviews(data);
@@ -44,7 +45,7 @@ const ReviewList = ({ movieId }) => {
         if (!newReview.trim()) return;
 
         try {
-            const res = await fetch(`https://localhost:7289/api/Review/movie/${movieId}`, {
+            const res = await fetch(`${API_BASE_URL}/api/Review/movie/${movieId}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -76,7 +77,7 @@ const ReviewList = ({ movieId }) => {
         if (!editContent.trim() || !editingReview) return;
 
         try {
-            const res = await fetch(`https://localhost:7289/api/Review/${editingReview.id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/Review/${editingReview.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -103,7 +104,7 @@ const ReviewList = ({ movieId }) => {
         if (!confirm("Are you sure you want to delete this review?")) return;
 
         try {
-            const res = await fetch(`https://localhost:7289/api/Review/${reviewId}`, {
+            const res = await fetch(`${API_BASE_URL}/api/Review/${reviewId}`, {
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`

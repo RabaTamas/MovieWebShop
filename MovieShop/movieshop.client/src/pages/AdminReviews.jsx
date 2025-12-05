@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import API_BASE_URL from '../config/api';
 
 const AdminReviews = () => {
     const { token } = useAuth();
@@ -12,7 +13,7 @@ const AdminReviews = () => {
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-                const response = await fetch(`https://localhost:7289/api/review`, {
+                const response = await fetch(`${API_BASE_URL}/api/review`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -46,7 +47,7 @@ const AdminReviews = () => {
         }
 
         try {
-            const response = await fetch(`https://localhost:7289/api/review/${reviewId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/review/${reviewId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

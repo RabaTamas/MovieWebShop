@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { UserRoles } from "../constants/UserRoles";
+import API_BASE_URL from '../config/api';
 
 const AdminShoppingCarts = () => {
     const { token, user } = useAuth();
@@ -21,7 +22,7 @@ const AdminShoppingCarts = () => {
 
         const fetchUsers = async () => {
             try {
-                const response = await fetch(`https://localhost:7289/api/user/all`, {
+                const response = await fetch(`${API_BASE_URL}/api/user/all`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -54,7 +55,7 @@ const AdminShoppingCarts = () => {
     const fetchCartForUser = async (userId) => {
         setLoading(true);
         try {
-            const response = await fetch(`https://localhost:7289/api/admin/shopping-carts/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/shopping-carts/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -93,7 +94,7 @@ const AdminShoppingCarts = () => {
         }
 
         try {
-            const response = await fetch(`https://localhost:7289/api/admin/shopping-carts/${userId}/clear`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/shopping-carts/${userId}/clear`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -119,7 +120,7 @@ const AdminShoppingCarts = () => {
         }
 
         try {
-            const response = await fetch(`https://localhost:7289/api/admin/shopping-carts/${userId}/remove/${movieId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/shopping-carts/${userId}/remove/${movieId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -140,7 +141,7 @@ const AdminShoppingCarts = () => {
 
     const handleUpdateQuantity = async (userId, movieId, quantity) => {
         try {
-            const response = await fetch(`https://localhost:7289/api/admin/shopping-carts/${userId}/update`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/shopping-carts/${userId}/update`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
