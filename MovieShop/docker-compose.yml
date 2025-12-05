@@ -1,0 +1,119 @@
+# ==============================================
+# MovieWebShop Docker Compose Configuration
+# ==============================================
+# This file orchestrates all services:
+# - SQL Server Database
+# - ASP.NET Core Backend API
+# - React Frontend (Nginx)
+# ==============================================
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # SQL Server Database Service
+  # ===========================================
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: movieshop-db
+    environment:
+      # Accept the SQL Server End-User License Agreement
+      - ACCEPT_EULA=Y
+      # Strong password for 'sa' user (change this in production!)
+      - SA_PASSWORD=${SA_PASSWORD:-YourStrong@Password123}
+      # SQL Server edition (Express is free)
+      - MSSQL_PID=Express
+    ports:
+      # Expose SQL Server on host port 1433
+      - "1433:1433"
+    volumes:
+      # Persist database data (survives container restarts)
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - movieshop-network
+    # Health check to ensure database is ready before starting dependent services
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD:-YourStrong@Password123} -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # ===========================================
+  # Backend API Service (ASP.NET Core)
+  # ===========================================
+  backend:
+    build:
+      context: ./MovieShop.Server
+      dockerfile: Dockerfile
+    container_name: movieshop-backend
+    environment:
+      # ASP.NET Core environment
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:80
+
+      # Database connection string (points to 'database' service)
+      - ConnectionStrings__DefaultConnection=Server=database;Database=MovieWebShopDB;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=True;MultipleActiveResultSets=true;
+
+      # JWT Configuration
+      - Jwt__Key=${JWT_KEY:-Dev_a8f5f167f44f4964e6c998dee827110c_MovieShop_SecretKey_2025}
+      - Jwt__Issuer=${JWT_ISSUER:-MovieShop}
+      - Jwt__Audience=${JWT_AUDIENCE:-MovieShopClient}
+      - Jwt__ExpiryInDays=${JWT_EXPIRY_DAYS:-7}
+
+      # External API Keys
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
+      - TmdbApi__ApiKey=${TMDB_API_KEY:-2d0fbe73adf49123bf24bade7108cf85}
+
+      # CORS Configuration (allow frontend)
+      - CORS__AllowedOrigins=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://frontend}
+    ports:
+      # Expose backend API on host port 5000
+      - "5000:80"
+    depends_on:
+      database:
+        # Wait until database health check passes
+        condition: service_healthy
+    networks:
+      - movieshop-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Frontend Service (React + Nginx)
+  # ===========================================
+  frontend:
+    build:
+      context: ./movieshop.client
+      dockerfile: Dockerfile
+    container_name: movieshop-frontend
+    environment:
+      # API URL for React app (can be overridden)
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:5000}
+    ports:
+      # Expose frontend on host port 3000
+      - "3000:80"
+    depends_on:
+      # Frontend needs backend to be running
+      - backend
+    networks:
+      - movieshop-network
+    restart: unless-stopped
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  movieshop-network:
+    driver: bridge
+    # Bridge network allows containers to communicate by service name
+    # e.g., backend can reach database via 'database:1433'
+
+# ===========================================
+# Volumes (Persistent Storage)
+# ===========================================
+volumes:
+  sqlserver-data:
+    # Persistent volume for SQL Server data
+    # Data survives container restarts and removals
+    driver: local

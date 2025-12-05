@@ -1,0 +1,42 @@
+# ==============================================
+# Root .dockerignore for Docker Compose
+# ==============================================
+# This file is used when running docker-compose from the MovieShop directory
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Visual Studio / IDE
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+
+# Documentation
+README.md
+*.md
+
+# Environment files (use .env instead)
+**/.env.local
+**/.env.*.local
+
+# Node modules (will be installed in container)
+**/node_modules/
+
+# Build outputs (will be built in container)
+**/bin/
+**/obj/
+**/dist/
+**/dist-ssr/
+**/build/
+
+# Logs
+**/*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+*~

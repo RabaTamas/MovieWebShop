@@ -25,6 +25,7 @@ namespace MovieShop.Server.Services.Implementations
             conversation.LastActivity = DateTime.UtcNow;
 
             // Limit to last 20 messages
+
             if (conversation.Messages.Count > 20)
             {
                 conversation.Messages = conversation.Messages.TakeLast(20).ToList();
