@@ -14,7 +14,7 @@ COPY package*.json ./
 
 # Install dependencies
 # Use 'npm ci' for faster, more reliable builds in CI/CD
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy the rest of the application source code
 COPY . .
