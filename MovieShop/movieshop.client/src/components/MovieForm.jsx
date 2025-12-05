@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext"
 
+import API_BASE_URL from "../config/api";
+
 const MovieForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -26,7 +28,7 @@ const MovieForm = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch('https://localhost:7289/api/category', {
+                const response = await fetch('${API_BASE_URL}/api/category', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -53,7 +55,7 @@ const MovieForm = () => {
             if (!isEditMode) return;
 
             try {
-                const response = await fetch(`https://localhost:7289/api/movie/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/api/movie/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -106,7 +108,7 @@ const MovieForm = () => {
             }
 
             const response = await fetch(
-                isEditMode ? `https://localhost:7289/api/movie/${id}` : 'https://localhost:7289/api/movie',
+                isEditMode ? `${API_BASE_URL}/api/movie/${id}` : '${API_BASE_URL}/api/movie',
                 {
                     method: isEditMode ? 'PUT' : 'POST',
                     headers: {

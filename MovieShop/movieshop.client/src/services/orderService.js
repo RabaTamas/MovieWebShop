@@ -1,7 +1,9 @@
+import API_BASE_URL from "../config/api";
+
 export const orderService = {
     // Admin functions
     getAllOrders: async (token) => {
-        const response = await fetch('https://localhost:7289/api/admin/orders', {
+        const response = await fetch('${API_BASE_URL}/api/admin/orders', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -15,7 +17,7 @@ export const orderService = {
     },
 
     getOrderById: async (id, token) => {
-        const response = await fetch(`https://localhost:7289/api/admin/orders/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/orders/${id}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -29,7 +31,7 @@ export const orderService = {
     },
 
     getOrdersByStatus: async (status, token) => {
-        const response = await fetch(`https://localhost:7289/api/admin/orders/status/${status}`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/orders/status/${status}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -43,7 +45,7 @@ export const orderService = {
     },
 
     updateOrderStatus: async (id, status, token) => {
-        const response = await fetch(`https://localhost:7289/api/admin/orders/${id}/status`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/orders/${id}/status`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -60,7 +62,7 @@ export const orderService = {
     },
 
     getOrderStatistics: async (token) => {
-        const response = await fetch('https://localhost:7289/api/admin/orders/statistics', {
+        const response = await fetch('${API_BASE_URL}/api/admin/orders/statistics', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }

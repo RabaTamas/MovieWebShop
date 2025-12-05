@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import MovieCard from "../components/MovieCard";
 import Pagination from "../components/Pagination";
+import API_BASE_URL from "../config/api";
 
 const Home = () => {
     const [movies, setMovies] = useState([]);
@@ -26,7 +27,7 @@ const Home = () => {
         const fetchCategories = async () => {
             setCategoriesLoading(true);
             try {
-                const res = await fetch(`https://localhost:7289/api/Category`);
+                const res = await fetch(`${API_BASE_URL}/api/Category`);
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
@@ -55,11 +56,11 @@ const Home = () => {
                 let url = "";
 
                 if (selectedCategories.length === 0) {
-                    url = `https://localhost:7289/api/Movie`;
+                    url = `${API_BASE_URL}/api/Movie`;
                 } else {
                     const params = new URLSearchParams();
                     selectedCategories.forEach(id => params.append("categoryIds", id));
-                    url = `https://localhost:7289/api/Movie/categories?${params.toString()}`;
+                    url = `${API_BASE_URL}/api/Movie/categories?${params.toString()}`;
                 }
 
                 const res = await fetch(url);
