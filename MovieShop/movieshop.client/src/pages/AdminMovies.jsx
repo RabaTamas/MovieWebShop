@@ -22,13 +22,13 @@ const AdminMovies = () => {
                 // Select endpoint based on view mode
                 switch (viewMode) {
                     case "deleted":
-                        endpoint = "${API_BASE_URL}/movie/admin/deleted";
+                        endpoint = `${API_BASE_URL}/movie/admin/deleted`;
                         break;
                     case "all":
-                        endpoint = "${API_BASE_URL}/api/movie/admin/all";
+                        endpoint = `${API_BASE_URL}/api/movie/admin/all`;
                         break;
                     default:
-                        endpoint = "${API_BASE_URL}/api/movie"; // Active movies only
+                        endpoint = `${API_BASE_URL}/api/movie`; // Active movies only
                         break;
                 }
 
@@ -284,6 +284,9 @@ const AdminMovies = () => {
                                                     </button>
                                                     <Link to={`/admin/movies/categories/${movie.id}`} className="btn btn-sm btn-outline-secondary">
                                                         <i className="bi bi-tags"></i> Categories
+                                                    </Link>
+                                                    <Link to={`/admin/movies/${movie.id}/video`} className="btn btn-sm btn-outline-success">
+                                                        <i className="bi bi-film"></i> Video
                                                     </Link>
                                                 </>
                                             )}

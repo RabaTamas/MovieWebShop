@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "qhI7A+DeTSHjxjWNTbzBa8bBFKd1i/x8Zer87ZsaRhY=",
+  "Hash": "ymUPN6mrFysOOkzNQmenHvDrzJymnN6b1hr0LBiRt+Y=",
   "Source": "MovieShop.Server",
   "BasePath": "_content/MovieShop.Server",
   "Mode": "Default",
@@ -11,10 +11,10 @@
       "Version": 2,
       "Source": "movieshop.client",
       "GetPublishAssetsTargets": "GetCurrentProjectPublishStaticWebAssetItems",
-      "AdditionalPublishProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalPublishProperties": "",
       "AdditionalPublishPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained",
       "GetBuildAssetsTargets": "GetCurrentProjectBuildStaticWebAssetItems",
-      "AdditionalBuildProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalBuildProperties": "",
       "AdditionalBuildPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained"
     }
   ],

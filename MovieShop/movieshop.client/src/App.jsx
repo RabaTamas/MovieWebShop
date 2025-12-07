@@ -25,6 +25,10 @@ import Unauthorized from './pages/Unauthorized';
 import AdminAddresses from './pages/AdminAddresses';
 import About from './pages/About';
 import Chatbot from './components/Chatbot';
+import MyMovies from './pages/MyMovies';
+import WatchMovie from './pages/WatchMovie';
+import AdminVideoUpload from './pages/Admin/AdminVideoUpload';
+
 function App() {
     return (
         <Router>
@@ -67,6 +71,22 @@ function App() {
                                     </PrivateRoute>
                                 }
                             />
+                            <Route
+                                path="/my-movies"
+                                element={
+                                    <PrivateRoute>
+                                        <MyMovies />
+                                    </PrivateRoute>
+                                }
+                            />
+                            <Route
+                                path="/my-movies/:movieId/watch"
+                                element={
+                                    <PrivateRoute>
+                                        <WatchMovie />
+                                    </PrivateRoute>
+                                }
+                            />
 
                             {/* Admin routes - protected with AdminRoute */}
                             <Route
@@ -98,6 +118,14 @@ function App() {
                                 element={
                                     <AdminRoute>
                                         <MovieCategories />
+                                    </AdminRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/movies/:movieId/video"
+                                element={
+                                    <AdminRoute>
+                                        <AdminVideoUpload />
                                     </AdminRoute>
                                 }
                             />

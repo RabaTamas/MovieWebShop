@@ -12,8 +12,8 @@ using MovieShop.Server.Data;
 namespace MovieShop.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250516222006_FixingAddress")]
-    partial class FixingAddress
+    [Migration("20251206090314_AddVideoFileNameToMovie")]
+    partial class AddVideoFileNameToMovie
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -230,6 +230,14 @@ namespace MovieShop.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -241,11 +249,20 @@ namespace MovieShop.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Price")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VideoFileName")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -269,6 +286,10 @@ namespace MovieShop.Server.Migrations
 
                     b.Property<int>("ShippingAddressId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("TotalPrice")
                         .HasColumnType("int");

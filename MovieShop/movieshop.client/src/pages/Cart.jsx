@@ -16,7 +16,7 @@ const Cart = () => {
     const [stripePromise, setStripePromise] = useState(null);
 
     const fetchCart = () => {
-        fetch('${API_BASE_URL}/api/ShoppingCart', {
+        fetch(`${API_BASE_URL}/api/ShoppingCart`, {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -28,7 +28,7 @@ const Cart = () => {
     };
 
     const fetchAddresses = () => {
-        fetch('${API_BASE_URL}/api/Address', {
+        fetch(`${API_BASE_URL}/api/Address`, {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -42,7 +42,7 @@ const Cart = () => {
     };
 
     useEffect(() => {
-        fetch('${API_BASE_URL}/api/Payment/config', {
+        fetch(`${API_BASE_URL}/api/Payment/config`, {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -61,7 +61,7 @@ const Cart = () => {
         const method = address.id ? 'PUT' : 'POST';
         const url = address.id
             ? `${API_BASE_URL}/api/Address/${address.id}`
-            : '${API_BASE_URL}/api/Address';
+            : `${API_BASE_URL}/api/Address`;
 
         fetch(url, {
             method,
@@ -83,7 +83,7 @@ const Cart = () => {
         const method = address.id ? 'PUT' : 'POST';
         const url = address.id
             ? `${API_BASE_URL}/api/Address/${address.id}`
-            : '${API_BASE_URL}/api/Address';
+            : `${API_BASE_URL}/api/Address`;
 
         fetch(url, {
             method,
@@ -104,7 +104,7 @@ const Cart = () => {
     const updateQuantity = (movieId, newQuantity) => {
         if (newQuantity < 1) return;
 
-        fetch('${API_BASE_URL}/api/ShoppingCart/update', {
+        fetch(`${API_BASE_URL}/api/ShoppingCart/update`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ const Cart = () => {
 
     //const initiatePayment = async () => {
     //    if (!billingAddress || !shippingAddress) {
-    //        alert("Hiányzó számlázási vagy szállítási cím.");
+    //        alert("Hiï¿½nyzï¿½ szï¿½mlï¿½zï¿½si vagy szï¿½llï¿½tï¿½si cï¿½m.");
     //        return;
     //    }
 
@@ -161,24 +161,24 @@ const Cart = () => {
     //        setClientSecret(data.clientSecret);
     //        setShowPayment(true);
     //    } catch (err) {
-    //        alert("Hiba a fizetés indításakor: " + err.message);
+    //        alert("Hiba a fizetï¿½s indï¿½tï¿½sakor: " + err.message);
     //    }
     //};
 
     const initiatePayment = async () => {
         if (!billingAddress || !shippingAddress) {
-            alert("Hiányzó számlázási vagy szállítási cím.");
+            alert("Hiï¿½nyzï¿½ szï¿½mlï¿½zï¿½si vagy szï¿½llï¿½tï¿½si cï¿½m.");
             return;
         }
 
         try {
             console.log("?? Total amount:", total);
 
-            // Teszt: minimum összeg ellenõrzése
+            // Teszt: minimum ï¿½sszeg ellenï¿½rzï¿½se
             const testAmount = Math.max(total, 100); // Minimum 100 HUF
             console.log("?? Sending amount:", testAmount);
 
-            const response = await fetch('${API_BASE_URL}/api/Payment/create-payment-intent', {
+            const response = await fetch(`${API_BASE_URL}/api/Payment/create-payment-intent`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ const Cart = () => {
             setShowPayment(true);
         } catch (err) {
             console.error("? Exception:", err);
-            alert("Hiba a fizetés indításakor: " + err.message);
+            alert("Hiba a fizetï¿½s indï¿½tï¿½sakor: " + err.message);
         }
     };
 
@@ -212,7 +212,7 @@ const Cart = () => {
             });
 
             if (error) {
-                alert("Fizetési hiba: " + error.message);
+                alert("Fizetï¿½si hiba: " + error.message);
                 return;
             }
 
@@ -237,7 +237,7 @@ const Cart = () => {
                     }))
                 };
 
-                const orderResponse = await fetch('/api/Order', {
+                const orderResponse = await fetch(`${API_BASE_URL}/api/Order`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -249,12 +249,12 @@ const Cart = () => {
                 if (!orderResponse.ok) throw new Error("Order failed.");
 
                 const order = await orderResponse.json();
-                alert("Sikeres rendelés! Rendelés azonosító: " + order.id);
+                alert("Sikeres rendelï¿½s! Rendelï¿½s azonosï¿½tï¿½: " + order.id);
                 setShowPayment(false);
                 fetchCart();
             }
         } catch (err) {
-            alert("Hiba történt: " + err.message);
+            alert("Hiba tï¿½rtï¿½nt: " + err.message);
         }
     };
 

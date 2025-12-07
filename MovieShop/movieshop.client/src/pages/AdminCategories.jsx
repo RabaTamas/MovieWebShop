@@ -17,7 +17,7 @@ const AdminCategories = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch('${API_BASE_URL}/api/category', {
+                const response = await fetch(`${API_BASE_URL}/api/category`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -52,7 +52,7 @@ const AdminCategories = () => {
         setSaving(true);
         setError(null);
         try {
-            const response = await fetch('${API_BASE_URL}/api/category', {
+            const response = await fetch(`${API_BASE_URL}/api/category`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -30,6 +30,9 @@ namespace MovieShop.Server.Models
 
         public bool IsDeleted { get; set; } = false;
 
+        // Video streaming
+        public string? VideoFileName { get; set; }
+
         // Timestamps for audit trail
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

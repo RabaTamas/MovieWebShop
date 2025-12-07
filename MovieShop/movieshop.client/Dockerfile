@@ -8,6 +8,10 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Build argument for API URL
+ARG VITE_API_URL=http://localhost:5000
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Copy package files first (for better caching)
 # This layer is cached unless package.json or package-lock.json changes
 COPY package*.json ./

@@ -35,7 +35,7 @@ const Chatbot = () => {
         setLoading(true);
 
         try {
-            const response = await fetch('${API_BASE_URL}/api/Chat/ask', {
+            const response = await fetch(`${API_BASE_URL}/api/Chat/ask`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

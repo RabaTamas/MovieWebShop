@@ -303,5 +303,15 @@ namespace MovieShop.Server.Services.Implementations
                 return false;
             }
         }
+
+        public async Task UpdateVideoFileNameAsync(int movieId, string? videoFileName)
+        {
+            var movie = await _context.Movies.FindAsync(movieId);
+            if (movie != null)
+            {
+                movie.VideoFileName = videoFileName;
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

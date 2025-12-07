@@ -28,7 +28,7 @@ const MovieForm = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch('${API_BASE_URL}/api/category', {
+                const response = await fetch(`${API_BASE_URL}/api/category`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -108,7 +108,7 @@ const MovieForm = () => {
             }
 
             const response = await fetch(
-                isEditMode ? `${API_BASE_URL}/api/movie/${id}` : '${API_BASE_URL}/api/movie',
+                isEditMode ? `${API_BASE_URL}/api/movie/${id}` : `${API_BASE_URL}/api/movie`,
                 {
                     method: isEditMode ? 'PUT' : 'POST',
                     headers: {

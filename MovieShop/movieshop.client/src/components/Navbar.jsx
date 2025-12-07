@@ -156,6 +156,11 @@ const Navbar = () => {
                                             Orders
                                         </Link>
                                     </li>
+                                    <li>
+                                        <Link className="dropdown-item" to="/my-movies" onClick={() => setSettingsOpen(false)}>
+                                            My Movies
+                                        </Link>
+                                    </li>
                                 </ul>
                             </li>
 

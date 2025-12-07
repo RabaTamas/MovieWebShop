@@ -15,5 +15,7 @@ namespace MovieShop.Server.Services.Interfaces
         Task<bool> UpdateOrderStatusAsync(int orderId, string status);
         Task<IEnumerable<OrderDto>> GetOrdersByStatusAsync(string status);
         Task<OrderStatisticsDto> GetOrderStatisticsAsync();
+        Task<bool> HasUserPurchasedMovieAsync(int userId, int movieId);
+        Task<IEnumerable<int>> GetPurchasedMovieIdsAsync(int userId);
     }
 }

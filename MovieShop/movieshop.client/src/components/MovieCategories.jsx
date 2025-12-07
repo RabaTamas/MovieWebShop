@@ -34,7 +34,7 @@ const MovieCategories = () => {
                 setMovie(movieData);
 
                 // Fetch all categories
-                const categoriesResponse = await fetch('${API_BASE_URL}/api/category', {
+                const categoriesResponse = await fetch(`${API_BASE_URL}/api/category`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

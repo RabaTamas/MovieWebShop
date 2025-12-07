@@ -22,7 +22,7 @@ const Profile = () => {
 
         const fetchProfile = async () => {
             try {
-                const res = await fetch("${API_BASE_URL}/api/user/profile", {
+                const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -55,7 +55,7 @@ const Profile = () => {
         setEmailMessage("");
 
         try {
-            const res = await fetch("${API_BASE_URL}/api/user/email", {
+            const res = await fetch(`${API_BASE_URL}/api/user/email`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -83,7 +83,7 @@ const Profile = () => {
         setPasswordMessage("");
 
         try {
-            const res = await fetch("${API_BASE_URL}/api/user/password", {
+            const res = await fetch(`${API_BASE_URL}/api/user/password`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -109,7 +109,7 @@ const Profile = () => {
         }
     };
 
-    if (isLoading) return <p>Betöltés...</p>;
+    if (isLoading) return <p>Betï¿½ltï¿½s...</p>;
     if (error) return <p className="error-message">{error}</p>;
     if (!profile) return <p>Unsuccessful to load the profile</p>;
 

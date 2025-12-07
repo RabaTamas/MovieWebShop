@@ -70,6 +70,10 @@ services:
 
       # CORS Configuration (allow frontend)
       - CORS__AllowedOrigins=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://frontend}
+      
+      # Streaming configuration
+      - Streaming__BaseUrl=http://localhost:8080
+      - MovieFiles__Path=/app/movie-files
     ports:
       # Expose backend API on host port 5000
       - "5000:80"
@@ -77,6 +81,9 @@ services:
       database:
         # Wait until database health check passes
         condition: service_healthy
+    volumes:
+      # Mount movie-files directory for video uploads
+      - ./movie-files:/app/movie-files
     networks:
       - movieshop-network
     restart: unless-stopped
@@ -88,16 +95,33 @@ services:
     build:
       context: ./movieshop.client
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5000
     container_name: movieshop-frontend
-    environment:
-      # API URL for React app (can be overridden)
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:5000}
     ports:
       # Expose frontend on host port 3000
       - "3000:80"
     depends_on:
       # Frontend needs backend to be running
       - backend
+    networks:
+      - movieshop-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Streaming Service (Nginx with Secure Links)
+  # ===========================================
+  streaming:
+    build:
+      context: ./nginx-streaming
+      dockerfile: Dockerfile
+    container_name: movieshop-streaming
+    ports:
+      # Expose streaming service on host port 8080
+      - "8080:8080"
+    volumes:
+      # Mount directory for movie files
+      - ./movie-files:/var/www/movies:ro
     networks:
       - movieshop-network
     restart: unless-stopped

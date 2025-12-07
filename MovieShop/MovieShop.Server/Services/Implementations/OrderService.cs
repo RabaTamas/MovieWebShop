@@ -262,5 +262,29 @@ namespace MovieShop.Server.Services.Implementations
 
             return stats;
         }
+
+        public async Task<bool> HasUserPurchasedMovieAsync(int userId, int movieId)
+        {
+            var deliveredStatus = OrderStatus.Delivered.ToString();
+            var shippedStatus = OrderStatus.Shipped.ToString();
+            
+            return await _context.Orders
+                .Where(o => o.UserId == userId && (o.Status == deliveredStatus || o.Status == shippedStatus))
+                .AnyAsync(o => o.OrderMovies.Any(om => om.MovieId == movieId));
+        }
+
+        public async Task<IEnumerable<int>> GetPurchasedMovieIdsAsync(int userId)
+        {
+            var deliveredStatus = OrderStatus.Delivered.ToString();
+            var shippedStatus = OrderStatus.Shipped.ToString();
+            
+            var movieIds = await _context.Orders
+                .Where(o => o.UserId == userId && (o.Status == deliveredStatus || o.Status == shippedStatus))
+                .SelectMany(o => o.OrderMovies.Select(om => om.MovieId))
+                .Distinct()
+                .ToListAsync();
+
+            return movieIds;
+        }
     }
 }

@@ -15,8 +15,17 @@ using MovieShop.Server.Services.Interfaces.TMDB;
 using Stripe;
 using MovieShop.Server.Services.Implementations.Stripe;
 using MovieShop.Server.Services.Interfaces.Stripe;
+using Hangfire;
+using Hangfire.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Kestrel for large file uploads
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 524288000; // 500 MB
+    options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(10);
+});
 
 // Load configuration from appsettings.json and environment variables
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured");
@@ -74,14 +83,40 @@ builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddHttpClient<ITmdbService, TmdbService>();
+builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IAdminAddressService, AdminAddressService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddSingleton<IConversationService, ConversationService>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<IStripeService, StripeService>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddScoped<ITranscodingService, TranscodingService>();
+builder.Services.AddScoped<IStreamingService, StreamingService>();
+
+// Configure Hangfire for background jobs
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
+    {
+        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+        QueuePollInterval = TimeSpan.Zero,
+        UseRecommendedIsolationLevel = true,
+        DisableGlobalLocks = true
+    }));
+
+builder.Services.AddHangfireServer();
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
+
+// Configure multipart body length limit for file uploads (500MB)
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 524288000; // 500 MB
+});
 
 builder.Services.AddControllers();
 
@@ -109,14 +144,14 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseCors();
+
+// Hangfire Dashboard (development only for now)
+app.UseHangfireDashboard("/hangfire");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -133,19 +168,12 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<AppDbContext>();
         var logger = services.GetRequiredService<ILogger<Program>>();
 
-        logger.LogInformation("Creating database schema...");
+        logger.LogInformation("Applying database migrations...");
 
-        // Use EnsureCreated instead of Migrate (creates schema without migrations)
-        var created = await context.Database.EnsureCreatedAsync();
+        // Use Migrate to apply all pending migrations
+        await context.Database.MigrateAsync();
 
-        if (created)
-        {
-            logger.LogInformation("Database created successfully.");
-        }
-        else
-        {
-            logger.LogInformation("Database already exists.");
-        }
+        logger.LogInformation("Database migrations applied successfully.");
     }
     catch (Exception ex)
     {

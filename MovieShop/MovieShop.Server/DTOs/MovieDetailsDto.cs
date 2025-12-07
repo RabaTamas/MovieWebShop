@@ -11,6 +11,8 @@
         public List<CategoryDto>? Categories { get; set; }
         public List<ReviewDto>? Reviews { get; set; }
 
+        public string? VideoFileName { get; set; }
+
         public bool IsDeleted { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

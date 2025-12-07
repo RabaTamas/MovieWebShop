@@ -29,11 +29,11 @@
 .vs/
 .vscode/
 
-# Configuration files with secrets
-MovieShop/MovieShop.Server/appsettings.json
-MovieShop/MovieShop.Server/appsettings.*.json
-!MovieShop/MovieShop.Server/appsettings.Development.json
-MovieShop/MovieShop.Server/bin/Debug/net8.0/appsettings.json
+# Configuration files with secrets (NEVER commit these!)
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.Example.json
+**/bin/**/appsettings.json
 
 # ===== Node.js / React =====
 node_modules/
@@ -50,6 +50,10 @@ dist-ssr/
 # ===== Docker =====
 # Ignore local docker overrides
 docker-compose.override.yml
+
+# ===== Local Storage (deprecated - using Azure Blob now) =====
+movie-files/
+MovieShop/movie-files/
 
 # ===== Operating System =====
 # macOS

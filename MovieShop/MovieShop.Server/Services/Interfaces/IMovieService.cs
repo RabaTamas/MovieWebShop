@@ -23,5 +23,7 @@ namespace MovieShop.Server.Services.Interfaces
 
         Task<bool> DeleteMovieAsync(int id); // Soft delete
         Task<bool> RestoreMovieAsync(int id); // Restore soft-deleted movie
+        
+        Task UpdateVideoFileNameAsync(int movieId, string? videoFileName);
     }
 }

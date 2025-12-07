@@ -3,7 +3,7 @@ import API_BASE_URL from "../config/api";
 export const orderService = {
     // Admin functions
     getAllOrders: async (token) => {
-        const response = await fetch('${API_BASE_URL}/api/admin/orders', {
+        const response = await fetch(`${API_BASE_URL}/api/admin/orders`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -62,7 +62,7 @@ export const orderService = {
     },
 
     getOrderStatistics: async (token) => {
-        const response = await fetch('${API_BASE_URL}/api/admin/orders/statistics', {
+        const response = await fetch(`${API_BASE_URL}/api/admin/orders/statistics`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
