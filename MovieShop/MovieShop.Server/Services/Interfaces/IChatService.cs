@@ -2,7 +2,7 @@
 {
     public interface IChatService
     {
-        //Task<string> GetContextualAnswer(string question);
-        Task<string> GetContextualAnswer(string question, string sessionId);
+        Task<string> GetContextualAnswer(string question, string sessionId, string? userId = null);
+        Task<string> GetUserContext(string? userId);
     }
 }

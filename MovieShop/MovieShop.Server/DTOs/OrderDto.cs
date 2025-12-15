@@ -6,8 +6,7 @@
         public DateTime OrderDate { get; set; }
         public int TotalPrice { get; set; }
 
-        public AddressDto BillingAddress { get; set; } = null!;
-        public AddressDto ShippingAddress { get; set; } = null!;
+        public AddressDto? BillingAddress { get; set; }
 
         public List<OrderMovieDto> Movies { get; set; } = new();
 

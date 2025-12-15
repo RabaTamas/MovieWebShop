@@ -66,5 +66,19 @@ namespace MovieShop.Server.Controllers
 
             return Ok(new { message = "Admin rights removed from user" });
         }
+
+        [HttpPost("google-login")]
+        public async Task<ActionResult<AuthResultDto>> GoogleLogin(GoogleLoginDto googleLoginDto)
+        {
+            try
+            {
+                var result = await _authService.GoogleLoginAsync(googleLoginDto.IdToken);
+                return Ok(result);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

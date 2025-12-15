@@ -61,19 +61,15 @@ namespace MovieShop.Server.Services.Implementations
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Create addresses
+                // Create billing address
                 var billingAddress = _mapper.Map<Address>(dto.BillingAddress);
-                var shippingAddress = _mapper.Map<Address>(dto.ShippingAddress);
-
                 billingAddress.UserId = userId;
-                shippingAddress.UserId = userId;
                 
                 await _context.Addresses.AddAsync(billingAddress);
-                await _context.Addresses.AddAsync(shippingAddress);
                 await _context.SaveChangesAsync();
 
-                // Calculate total price
-                int totalPrice = cartDto.Items.Sum(i => i.PriceAtOrder * i.Quantity);
+                // Calculate total price (no quantity, each movie is 1 license)
+                int totalPrice = cartDto.Items.Sum(i => i.PriceAtOrder);
 
                 // Create order
                 var order = new Order
@@ -82,20 +78,20 @@ namespace MovieShop.Server.Services.Implementations
                     OrderDate = DateTime.UtcNow,
                     TotalPrice = totalPrice,
                     BillingAddressId = billingAddress.Id,
-                    ShippingAddressId = shippingAddress.Id
+                    ShippingAddressId = null // No shipping for digital products
                 };
 
                 await _context.Orders.AddAsync(order);
                 await _context.SaveChangesAsync();
 
-                // Add order items
+                // Add order items (quantity always 1 for digital products)
                 foreach (var item in cartDto.Items)
                 {
                     var orderMovie = new OrderMovie
                     {
                         OrderId = order.Id,
                         MovieId = item.MovieId,
-                        Quantity = item.Quantity,
+                        Quantity = 1, // Always 1 for digital license
                         PriceAtOrder = item.PriceAtOrder
                     };
 
@@ -265,21 +261,19 @@ namespace MovieShop.Server.Services.Implementations
 
         public async Task<bool> HasUserPurchasedMovieAsync(int userId, int movieId)
         {
-            var deliveredStatus = OrderStatus.Delivered.ToString();
-            var shippedStatus = OrderStatus.Shipped.ToString();
+            var completedStatus = OrderStatus.Completed.ToString();
             
             return await _context.Orders
-                .Where(o => o.UserId == userId && (o.Status == deliveredStatus || o.Status == shippedStatus))
+                .Where(o => o.UserId == userId && o.Status == completedStatus)
                 .AnyAsync(o => o.OrderMovies.Any(om => om.MovieId == movieId));
         }
 
         public async Task<IEnumerable<int>> GetPurchasedMovieIdsAsync(int userId)
         {
-            var deliveredStatus = OrderStatus.Delivered.ToString();
-            var shippedStatus = OrderStatus.Shipped.ToString();
+            var completedStatus = OrderStatus.Completed.ToString();
             
             var movieIds = await _context.Orders
-                .Where(o => o.UserId == userId && (o.Status == deliveredStatus || o.Status == shippedStatus))
+                .Where(o => o.UserId == userId && o.Status == completedStatus)
                 .SelectMany(o => o.OrderMovies.Select(om => om.MovieId))
                 .Distinct()
                 .ToListAsync();

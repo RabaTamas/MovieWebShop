@@ -12,6 +12,7 @@ using System.Text;
 using MovieShop.Server.Constants;
 using Microsoft.AspNetCore.Identity;
 using MovieShop.Server.Services.Interfaces;
+using Google.Apis.Auth;
 
 namespace MovieShop.Server.Services.Implementations
 {
@@ -110,6 +111,70 @@ namespace MovieShop.Server.Services.Implementations
                 User = userDto,
                 TokenExpiration = DateTime.UtcNow.AddDays(7)
             };
+        }
+
+        public async Task<AuthResultDto> GoogleLoginAsync(string idToken)
+        {
+            try
+            {
+                // Verify the Google ID token
+                var settings = new GoogleJsonWebSignature.ValidationSettings()
+                {
+                    Audience = new[] { _configuration["Authentication:Google:ClientId"] }
+                };
+
+                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+
+                if (payload == null)
+                {
+                    throw new ApplicationException("Invalid Google token");
+                }
+
+                // Check if user exists
+                var user = await _userManager.FindByEmailAsync(payload.Email);
+
+                if (user == null)
+                {
+                    // Create new user from Google account
+                    // Use email as username to avoid special character issues
+                    var username = payload.Email.Split('@')[0]; // Use email prefix as username
+                    
+                    user = new User
+                    {
+                        UserName = username,
+                        Email = payload.Email,
+                        EmailConfirmed = true // Google accounts are already verified
+                    };
+
+                    var createResult = await _userManager.CreateAsync(user);
+                    if (!createResult.Succeeded)
+                    {
+                        throw new ApplicationException($"Failed to create user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                    }
+
+                    // Assign default user role
+                    await _userManager.AddToRoleAsync(user, UserRoles.User);
+                }
+
+                // Get user roles
+                var roles = await _userManager.GetRolesAsync(user);
+
+                // Generate JWT token
+                var token = GenerateJwtToken(user, roles);
+
+                var userDto = _mapper.Map<UserDto>(user);
+
+                return new AuthResultDto
+                {
+                    Token = token,
+                    User = userDto,
+                    TokenExpiration = DateTime.UtcNow.AddDays(7)
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Google login failed: {ex.Message}");
+            }
         }
 
         public async Task<bool> IsAdminAsync(int userId)

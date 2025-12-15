@@ -13,10 +13,12 @@ namespace MovieShop.Server.Controllers
     public class ShoppingCartController : ControllerBase
     {
         private readonly IShoppingCartService _cartService;
+        private readonly IOrderService _orderService;
 
-        public ShoppingCartController(IShoppingCartService cartService)
+        public ShoppingCartController(IShoppingCartService cartService, IOrderService orderService)
         {
             _cartService = cartService;
+            _orderService = orderService;
         }
 
         private int GetUserId() => int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -33,6 +35,14 @@ namespace MovieShop.Server.Controllers
         public async Task<ActionResult> AddToCart([FromBody] AddToCartDto dto)
         {
             var userId = GetUserId();
+            
+            // Check if user already purchased this movie
+            var hasPurchased = await _orderService.HasUserPurchasedMovieAsync(userId, dto.MovieId);
+            if (hasPurchased)
+            {
+                return BadRequest(new { message = "You already own this movie. Check My Movies to watch it." });
+            }
+            
             var result = await _cartService.AddToCartAsync(userId, dto.MovieId, dto.Quantity);
             return result ? Ok() : BadRequest("Failed to add to cart");
         }

@@ -9,7 +9,6 @@ import API_BASE_URL from "../config/api";
 const Cart = () => {
     const { token } = useAuth();
     const [items, setItems] = useState([]);
-    const [shippingAddress, setShippingAddress] = useState(null);
     const [billingAddress, setBillingAddress] = useState(null);
     const [showPayment, setShowPayment] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
@@ -33,8 +32,7 @@ const Cart = () => {
         })
             .then(res => res.json())
             .then(data => {
-                setShippingAddress(data[0] || null);
-                setBillingAddress(data[1] || null);
+                setBillingAddress(data[0] || null);
             })
             .catch(err => {
                 console.error("Error loading addresses:", err);
@@ -55,29 +53,7 @@ const Cart = () => {
     useEffect(() => {
         fetchCart();
         fetchAddresses();
-    }, []);
-
-    const saveShippingAddress = (address) => {
-        const method = address.id ? 'PUT' : 'POST';
-        const url = address.id
-            ? `${API_BASE_URL}/api/Address/${address.id}`
-            : `${API_BASE_URL}/api/Address`;
-
-        fetch(url, {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify(address)
-        })
-            .then(res => {
-                if (!res.ok) throw new Error("Failed to save shipping address");
-                return res.json();
-            })
-            .then(saved => setShippingAddress(saved))
-            .catch(err => alert(err.message));
-    };
+    }, [token]);
 
     const saveBillingAddress = (address) => {
         const method = address.id ? 'PUT' : 'POST';
@@ -101,27 +77,6 @@ const Cart = () => {
             .catch(err => alert(err.message));
     };
 
-    const updateQuantity = (movieId, newQuantity) => {
-        if (newQuantity < 1) return;
-
-        fetch(`${API_BASE_URL}/api/ShoppingCart/update`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({ movieId, quantity: newQuantity })
-        })
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to update quantity');
-                fetchCart();
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Error updating quantity');
-            });
-    };
-
     const removeItem = (movieId) => {
         fetch(`${API_BASE_URL}/api/ShoppingCart/remove/${movieId}`, {
             method: 'DELETE',
@@ -139,7 +94,7 @@ const Cart = () => {
             });
     };
 
-    const total = items.reduce((sum, item) => sum + item.priceAtOrder * item.quantity, 0);
+    const total = items.reduce((sum, item) => sum + item.priceAtOrder, 0);
 
     //const initiatePayment = async () => {
     //    if (!billingAddress || !shippingAddress) {
@@ -166,8 +121,8 @@ const Cart = () => {
     //};
 
     const initiatePayment = async () => {
-        if (!billingAddress || !shippingAddress) {
-            alert("Hi�nyz� sz�ml�z�si vagy sz�ll�t�si c�m.");
+        if (!billingAddress) {
+            alert("Missing billing address.");
             return;
         }
 
@@ -200,7 +155,7 @@ const Cart = () => {
             setShowPayment(true);
         } catch (err) {
             console.error("? Exception:", err);
-            alert("Hiba a fizet�s ind�t�sakor: " + err.message);
+            alert("Payment initiation error: " + err.message);
         }
     };
 
@@ -212,7 +167,7 @@ const Cart = () => {
             });
 
             if (error) {
-                alert("Fizet�si hiba: " + error.message);
+                alert("Payment error: " + error.message);
                 return;
             }
 
@@ -223,16 +178,10 @@ const Cart = () => {
                         street: billingAddress.street,
                         zip: billingAddress.zip,
                     },
-                    shippingAddress: {
-                        city: shippingAddress.city,
-                        street: shippingAddress.street,
-                        zip: shippingAddress.zip,
-                    },
                     paymentIntentId: paymentIntent.id,
                     movies: items.map(item => ({
                         movieId: item.movieId,
                         title: item.title,
-                        quantity: item.quantity,
                         priceAtOrder: item.priceAtOrder
                     }))
                 };
@@ -254,7 +203,7 @@ const Cart = () => {
                 fetchCart();
             }
         } catch (err) {
-            alert("Hiba t�rt�nt: " + err.message);
+            alert("Error occurred: " + err.message);
         }
     };
 
@@ -276,9 +225,7 @@ const Cart = () => {
                         <thead>
                             <tr>
                                 <th>Title</th>
-                                <th>Quantity</th>
                                 <th>Price (Ft)</th>
-                                <th>Subtotal (Ft)</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -286,18 +233,7 @@ const Cart = () => {
                             {items.map(item => (
                                 <tr key={item.movieId}>
                                     <td>{item.title}</td>
-                                    <td>
-                                        <button className="btn btn-sm btn-secondary me-1"
-                                            onClick={() => updateQuantity(item.movieId, item.quantity - 1)}
-                                            disabled={item.quantity <= 1}
-                                        >-</button>
-                                        {item.quantity}
-                                        <button className="btn btn-sm btn-secondary ms-1"
-                                            onClick={() => updateQuantity(item.movieId, item.quantity + 1)}
-                                        >+</button>
-                                    </td>
                                     <td>{item.priceAtOrder}</td>
-                                    <td>{item.priceAtOrder * item.quantity}</td>
                                     <td>
                                         <button className="btn btn-sm btn-danger"
                                             onClick={() => removeItem(item.movieId)}
@@ -312,7 +248,7 @@ const Cart = () => {
                     {!showPayment ? (
                         <button
                             className="btn btn-primary mt-3"
-                            disabled={!shippingAddress || !billingAddress || items.length === 0}
+                            disabled={!billingAddress || items.length === 0}
                             onClick={initiatePayment}
                         >
                             Proceed to Payment
@@ -340,11 +276,6 @@ const Cart = () => {
                 </div>
 
                 <div className="col-md-4">
-                    <AddressForm
-                        title="Shipping Address"
-                        initialAddress={shippingAddress}
-                        onSave={saveShippingAddress}
-                    />
                     <AddressForm
                         title="Billing Address"
                         initialAddress={billingAddress}

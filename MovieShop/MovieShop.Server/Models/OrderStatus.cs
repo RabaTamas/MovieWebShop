@@ -2,10 +2,10 @@
 {
     public enum OrderStatus
     {
-        Pending,
-        Processing,
-        Shipped,
-        Delivered,
-        Cancelled
+        Pending,      // Payment pending
+        Completed,    // Payment successful, content available
+        Failed,       // Payment failed
+        Cancelled,    // Order cancelled by user/admin
+        Refunded      // Order refunded
     }
 }

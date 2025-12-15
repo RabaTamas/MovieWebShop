@@ -44,22 +44,17 @@ const Orders = () => {
                     <h3>Order #{order.id} - {new Date(order.orderDate).toLocaleString()}</h3>
                     <p><strong>Total:</strong> {order.totalPrice} Ft</p>
                     <p><strong>Status:</strong> {order.status}</p>
-                    <div style={{ display: "flex", gap: "2rem" }}>
+                    {order.billingAddress && (
                         <div>
                             <h4>Billing Address</h4>
                             <p>{order.billingAddress.street}, {order.billingAddress.city} {order.billingAddress.zip}</p>
                         </div>
-                        <div>
-                            <h4>Shipping Address</h4>
-                            <p>{order.shippingAddress.street}, {order.shippingAddress.city} {order.shippingAddress.zip}</p>
-                        </div>
-                    </div>
+                    )}
 
                     <table style={{ width: "100%", marginTop: "1rem", borderCollapse: "collapse" }}>
                         <thead>
                             <tr>
                                 <th style={{ borderBottom: "1px solid #ccc" }}>Title</th>
-                                <th style={{ borderBottom: "1px solid #ccc" }}>Quantity</th>
                                 <th style={{ borderBottom: "1px solid #ccc" }}>Price (Ft)</th>
                             </tr>
                         </thead>
@@ -67,7 +62,6 @@ const Orders = () => {
                             {order.movies.map((movie) => (
                                 <tr key={movie.movieId}>
                                     <td>{movie.title}</td>
-                                    <td>{movie.quantity}</td>
                                     <td>{movie.priceAtOrder}</td>
                                 </tr>
                             ))}

@@ -12,6 +12,7 @@ const MovieDetails = () => {
     const { user, token } = useAuth();
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isPurchased, setIsPurchased] = useState(false);
 
     useEffect(() => {
         setLoading(true);
@@ -33,9 +34,30 @@ const MovieDetails = () => {
             });
     }, [id, navigate]);
 
+    // Check if user has already purchased this movie
+    useEffect(() => {
+        if (user && token) {
+            fetch(`${API_BASE_URL}/api/Movie/purchased`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+                .then(res => res.json())
+                .then(movies => {
+                    const purchased = movies.some(m => m.id === parseInt(id));
+                    setIsPurchased(purchased);
+                })
+                .catch(err => console.error("Error checking purchased movies:", err));
+        }
+    }, [user, token, id]);
+
     const handleAddToCart = async () => {
         if (!user) {
             navigate("/login");
+            return;
+        }
+
+        if (isPurchased) {
+            alert("You already own this movie! Watch it in My Movies.");
+            navigate("/my-movies");
             return;
         }
 
@@ -53,12 +75,14 @@ const MovieDetails = () => {
             });
 
             if (!response.ok) {
-                throw new Error("Failed to add movie to cart");
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Failed to add movie to cart");
             }
 
             navigate("/cart");
         } catch (error) {
             console.error("Error adding to cart:", error);
+            alert(error.message);
         }
     };
 
@@ -72,7 +96,7 @@ const MovieDetails = () => {
 
     return (
         <div className="container">
-            <ProductSection movie={movie} onAddToCart={handleAddToCart} />
+            <ProductSection movie={movie} onAddToCart={handleAddToCart} isPurchased={isPurchased} />
             <ReviewList movieId={movie.id} />
         </div>
     );

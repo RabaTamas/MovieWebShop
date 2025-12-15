@@ -54,9 +54,16 @@ namespace MovieShop.Server.Services.Implementations
         //    return await GetAIResponseWithContext(question, "");
         //}
 
-        public async Task<string> GetContextualAnswer(string question, string sessionId)
+        public async Task<string> GetContextualAnswer(string question, string sessionId, string? userId = null)
         {
             var lowerQuestion = question.ToLower();
+
+            // Get user context if logged in
+            var userContext = string.Empty;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                userContext = await GetUserContext(userId);
+            }
 
             // Get conversation history
             var history = _conversationService.GetHistory(sessionId, 5);
@@ -75,7 +82,8 @@ namespace MovieShop.Server.Services.Implementations
             var movieContext = await GetMovieContext(lowerQuestion);
             if (!string.IsNullOrEmpty(movieContext))
             {
-                var answer = await GetAIResponseWithContext(question, movieContext, history);
+                var combinedContext = CombineContexts(userContext, movieContext);
+                var answer = await GetAIResponseWithContext(question, combinedContext, history);
                 _conversationService.AddMessage(sessionId, "user", question);
                 _conversationService.AddMessage(sessionId, "assistant", answer);
                 return answer;
@@ -108,7 +116,8 @@ namespace MovieShop.Server.Services.Implementations
                 lowerQuestion.Contains("best selling") || lowerQuestion.Contains("top"))
             {
                 var popularContext = await GetPopularMoviesContext();
-                var answer = await GetAIResponseWithContext(question, popularContext, history);
+                var combinedContext = CombineContexts(userContext, popularContext);
+                var answer = await GetAIResponseWithContext(question, combinedContext, history);
                 _conversationService.AddMessage(sessionId, "user", question);
                 _conversationService.AddMessage(sessionId, "assistant", answer);
                 return answer;
@@ -120,14 +129,16 @@ namespace MovieShop.Server.Services.Implementations
                 lowerQuestion.Contains("comedy") || lowerQuestion.Contains("horror"))
             {
                 var categoryContext = await GetCategoryContext(lowerQuestion);
-                var answer = await GetAIResponseWithContext(question, categoryContext, history);
+                var combinedContext = CombineContexts(userContext, categoryContext);
+                var answer = await GetAIResponseWithContext(question, combinedContext, history);
                 _conversationService.AddMessage(sessionId, "user", question);
                 _conversationService.AddMessage(sessionId, "assistant", answer);
                 return answer;
             }
 
             // Default
-            var defaultAnswer = await GetAIResponseWithContext(question, "", history);
+            var defaultContext = CombineContexts(userContext, "");
+            var defaultAnswer = await GetAIResponseWithContext(question, defaultContext, history);
             _conversationService.AddMessage(sessionId, "user", question);
             _conversationService.AddMessage(sessionId, "assistant", defaultAnswer);
             return defaultAnswer;
@@ -322,17 +333,23 @@ namespace MovieShop.Server.Services.Implementations
                 var systemPrompt = @"You are MovieShop customer service assistant. Follow these rules STRICTLY:
 
                     CRITICAL RULES:
-                    1. ONLY answer based on the provided Context data
+                    1. ONLY answer based on the provided Context data (includes USER PERSONAL DATA if user is logged in)
                     2. NEVER make up or invent information
                     3. If Context shows 'No reviews yet' - say there are NO reviews, don't invent any
                     4. If a movie is NOT in the Context - say 'We don't have that movie' or 'Let me check our inventory'
                     5. Do NOT hallucinate movie details, reviews, or availability
                     6. Be helpful but HONEST - if you don't know something, say so
+                    7. If USER PERSONAL DATA is provided, use it to give personalized answers:
+                       - For cart questions: refer to their actual cart items
+                       - For order questions: refer to their actual orders with order numbers and dates
+                       - For purchase history: refer to movies they actually bought
+                       - Be friendly and use 'your' instead of generic terms
 
                     Store info:
                     - Payment: Stripe card payment
-                    - Shipping: 3-5 business days  
-                    - Returns: 14 days
+                    - Digital streaming platform: Instant access after purchase
+                    - Watch movies online in My Movies section
+                    - Refunds: 14 days if not watched
                     - Contact: support@movieshop.com
 
                     Answer in English, briefly (max 4-5 sentences).";
@@ -397,6 +414,146 @@ namespace MovieShop.Server.Services.Implementations
                 Console.WriteLine($"❌ AI Error: {ex.Message}");
                 return "Technical error. Email: support@movieshop.com";
             }
+        }
+
+        public async Task<string> GetUserContext(string? userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                Console.WriteLine("⚠️ GetUserContext: userId is null or empty");
+                return string.Empty;
+            }
+
+            try
+            {
+                Console.WriteLine($"🔍 GetUserContext: Building context for userId: {userId}");
+                var context = new StringBuilder();
+                context.AppendLine("=== USER PERSONAL DATA ===");
+
+                // Convert userId string to int
+                if (!int.TryParse(userId, out int userIdInt))
+                {
+                    Console.WriteLine($"❌ Failed to parse userId '{userId}' to int");
+                    return string.Empty;
+                }
+                Console.WriteLine($"✅ Parsed userId to int: {userIdInt}");
+
+                // User info
+                var user = await _context.Users.FindAsync(userIdInt);
+                if (user != null)
+                {
+                    context.AppendLine($"User: {user.UserName} ({user.Email})");
+                    Console.WriteLine($"✅ Found user: {user.UserName}");
+                }
+                else
+                {
+                    Console.WriteLine($"❌ User not found with ID: {userId}");
+                }
+
+                // Shopping cart
+                var cart = await _context.ShoppingCarts
+                    .Include(sc => sc.ShoppingCartMovies)
+                        .ThenInclude(i => i.Movie)
+                    .FirstOrDefaultAsync(sc => sc.UserId == userIdInt);
+
+                Console.WriteLine($"🛒 Shopping cart query: userId={userId}");
+                if (cart != null && cart.ShoppingCartMovies != null && cart.ShoppingCartMovies.Any())
+                {
+                    Console.WriteLine($"✅ Cart found with {cart.ShoppingCartMovies.Count} items");
+                    context.AppendLine($"\nSHOPPING CART ({cart.ShoppingCartMovies.Count} items):");
+                    foreach (var item in cart.ShoppingCartMovies)
+                    {
+                        var price = item.Movie.DiscountedPrice ?? item.Movie.Price;
+                        context.AppendLine($"- {item.Movie.Title} (Quantity: {item.Quantity}, Price: {price} Ft each)");
+                        Console.WriteLine($"  📦 {item.Movie.Title} x{item.Quantity}");
+                    }
+                    context.AppendLine($"Cart Total: {cart.ShoppingCartMovies.Sum(i => i.Quantity * (i.Movie.DiscountedPrice ?? i.Movie.Price))} Ft");
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Cart empty or not found");
+                    context.AppendLine("\nSHOPPING CART: Empty");
+                }
+
+                // Recent orders
+                var recentOrders = await _context.Orders
+                    .Include(o => o.OrderMovies)
+                        .ThenInclude(om => om.Movie)
+                    .Where(o => o.UserId == userIdInt)
+                    .OrderByDescending(o => o.OrderDate)
+                    .Take(5)
+                    .ToListAsync();
+
+                Console.WriteLine($"📦 Orders query: found {recentOrders.Count} orders");
+                if (recentOrders.Any())
+                {
+                    context.AppendLine($"\nRECENT ORDERS ({recentOrders.Count} orders):");
+                    foreach (var order in recentOrders)
+                    {
+                        // Convert UTC to local time for display
+                        var localOrderDate = order.OrderDate.ToLocalTime();
+                        context.AppendLine($"- Order #{order.Id} placed on {localOrderDate:yyyy-MM-dd HH:mm}:");
+                        context.AppendLine($"  Status: {order.Status}");
+                        context.AppendLine($"  Total: {order.TotalPrice} Ft");
+                        var movieTitles = string.Join(", ", order.OrderMovies?.Select(om => om.Movie.Title) ?? new List<string>());
+                        context.AppendLine($"  Movies: {movieTitles}");
+                        Console.WriteLine($"  ✅ Order #{order.Id}: {movieTitles} - {order.TotalPrice} Ft on {localOrderDate:yyyy-MM-dd HH:mm}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"❌ No orders found");
+                    context.AppendLine("\nRECENT ORDERS: No orders yet");
+                }
+
+                // Purchased movies (for "What movies have I bought?" questions)
+                var purchasedMovies = await _context.OrderMovies
+                    .Include(om => om.Movie)
+                    .Include(om => om.Order)
+                    .Where(om => om.Order.UserId == userIdInt)
+                    .Select(om => om.Movie.Title)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (purchasedMovies.Any())
+                {
+                    context.AppendLine($"\nALL PURCHASED MOVIES ({purchasedMovies.Count} unique titles):");
+                    context.AppendLine(string.Join(", ", purchasedMovies));
+                    Console.WriteLine($"✅ Purchased movies: {string.Join(", ", purchasedMovies)}");
+                }
+
+                var finalContext = context.ToString();
+                Console.WriteLine($"📄 Final context length: {finalContext.Length} characters");
+                Console.WriteLine($"📄 Context preview:\n{finalContext.Substring(0, Math.Min(500, finalContext.Length))}...");
+                return finalContext;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error getting user context: {ex.Message}");
+                Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
+                return string.Empty;
+            }
+        }
+
+        private string CombineContexts(string userContext, string otherContext)
+        {
+            if (string.IsNullOrEmpty(userContext) && string.IsNullOrEmpty(otherContext))
+                return string.Empty;
+
+            var combined = new StringBuilder();
+            
+            if (!string.IsNullOrEmpty(userContext))
+            {
+                combined.AppendLine(userContext);
+                combined.AppendLine();
+            }
+
+            if (!string.IsNullOrEmpty(otherContext))
+            {
+                combined.AppendLine(otherContext);
+            }
+
+            return combined.ToString();
         }
     }
 }

@@ -73,7 +73,7 @@ const AdminOrderDetails = () => {
                         <div className="text-sm">
                             <p><span className="font-medium">Order ID:</span> #{order.id}</p>
                             <p><span className="font-medium">Date:</span> {formatDate(order.orderDate)}</p>
-                            <p><span className="font-medium">Total:</span> ${order.totalPrice}</p>
+                            <p><span className="font-medium">Total:</span> {order.totalPrice} Ft</p>
                         </div>
                     </div>
 
@@ -91,10 +91,10 @@ const AdminOrderDetails = () => {
                         <div className="flex items-center space-x-4">
                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                                 ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                                        order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-800' :
-                                            order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                                                order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                    order.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                        order.status === 'Failed' ? 'bg-red-100 text-red-800' :
+                                            order.status === 'Cancelled' ? 'bg-gray-100 text-gray-800' :
+                                                order.status === 'Refunded' ? 'bg-blue-100 text-blue-800' :
                                                     'bg-gray-100 text-gray-800'}`}>
                                 {order.status}
                             </span>
@@ -109,9 +109,8 @@ const AdminOrderDetails = () => {
                                     disabled={updateLoading}
                                 >
                                     <option value="Pending">Pending</option>
-                                    <option value="Processing">Processing</option>
-                                    <option value="Shipped">Shipped</option>
-                                    <option value="Delivered">Delivered</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Failed">Failed</option>
                                     <option value="Cancelled">Cancelled</option>
                                     <option value="Refunded">Refunded</option>
                                 </select>
@@ -129,19 +128,7 @@ const AdminOrderDetails = () => {
             </div>
 
             {/* Addresses */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                {/* Shipping Address */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-lg font-semibold mb-4">Shipping Address</h2>
-                    <div className="text-sm">
-                        <p>{order.shippingAddress.fullName}</p>
-                        <p>{order.shippingAddress.street}</p>
-                        <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
-                        <p>{order.shippingAddress.country}</p>
-                        <p className="mt-2">{order.shippingAddress.phone}</p>
-                    </div>
-                </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
                 {/* Billing Address */}
                 <div className="bg-white p-6 rounded-lg shadow">
                     <h2 className="text-lg font-semibold mb-4">Billing Address</h2>
@@ -187,10 +174,10 @@ const AdminOrderDetails = () => {
                                         {movie.quantity}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        ${movie.priceAtOrder}
+                                        {movie.priceAtOrder} Ft
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        ${movie.priceAtOrder * movie.quantity}
+                                        {movie.priceAtOrder * movie.quantity} Ft
                                     </td>
                                 </tr>
                             ))}
@@ -201,7 +188,7 @@ const AdminOrderDetails = () => {
                                     Total
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    ${order.totalPrice}
+                                    {order.totalPrice} Ft
                                 </td>
                             </tr>
                         </tfoot>

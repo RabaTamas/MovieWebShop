@@ -1,8 +1,10 @@
 ﻿import { useState } from 'react';
 import './Chatbot.css';
 import API_BASE_URL from '../config/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Chatbot = () => {
+    const { token } = useAuth(); // Get auth token
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         { text: "👋 Hi! How can I help you?", sender: "bot" }
@@ -13,20 +15,20 @@ const Chatbot = () => {
 
     const faqButtons = [
         "What payment methods do you accept?",
-        "How long is shipping?",
-        "Can I return a product?",
+        "How do I watch my movies?",
+        "Can I get a refund?",
         "How do I contact you?"
     ];
 
-    const [sessionId, setSessionId] = useState(() => {
-        // Generate or retrieve session ID
+    // Generate or retrieve session ID (doesn't need to be state)
+    const sessionId = (() => {
         let id = localStorage.getItem('chatSessionId');
         if (!id) {
             id = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             localStorage.setItem('chatSessionId', id);
         }
         return id;
-    });
+    })();
 
     const sendMessage = async (text) => {
         const userMessage = { text, sender: "user" };
@@ -35,9 +37,18 @@ const Chatbot = () => {
         setLoading(true);
 
         try {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            // Add authorization header if user is logged in
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${API_BASE_URL}/api/Chat/ask`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify({
                     question: text,
                     sessionId: sessionId

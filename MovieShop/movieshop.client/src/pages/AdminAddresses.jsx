@@ -19,7 +19,7 @@ const AdminAddresses = () => {
     useEffect(() => {
         const fetchAddresses = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/admin/addresses`, {
+                const response = await fetch(`${API_BASE_URL}/api/admin/addresses`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -243,9 +243,7 @@ const AdminAddresses = () => {
                                     <td>
                                         <div>
                                             <small className="text-muted">
-                                                Billing: {address.billingOrdersCount || 0}
-                                                <br />
-                                                Shipping: {address.shippingOrdersCount || 0}
+                                                Orders: {address.billingOrdersCount || 0}
                                             </small>
                                         </div>
                                     </td>
@@ -281,17 +279,14 @@ const AdminAddresses = () => {
                                                         className="btn btn-outline-danger"
                                                         onClick={() => handleDelete(address.id)}
                                                         title="Delete address"
-                                                        disabled={
-                                                            (address.billingOrdersCount > 0) ||
-                                                            (address.shippingOrdersCount > 0)
-                                                        }
+                                                        disabled={address.billingOrdersCount > 0}
                                                     >
                                                         <i className="bi bi-trash"></i>
                                                     </button>
                                                 </>
                                             )}
                                         </div>
-                                        {((address.billingOrdersCount > 0) || (address.shippingOrdersCount > 0)) && (
+                                        {(address.billingOrdersCount > 0) && (
                                             <div className="mt-1">
                                                 <small className="text-warning">
                                                     <i className="bi bi-exclamation-triangle"></i>

@@ -1,4 +1,4 @@
-const ProductSection = ({ movie, onAddToCart }) => (
+const ProductSection = ({ movie, onAddToCart, isPurchased = false }) => (
     <>
         <section className="py-5 bg-gradient-to-br from-slate-50 to-slate-100">
             <div className="container px-4 px-lg-5 my-5">
@@ -131,22 +131,28 @@ const ProductSection = ({ movie, onAddToCart }) => (
 
                             {/* Add to Cart Button */}
                             <div className="d-flex gap-3">
-                                <button
-                                    className="btn btn-lg px-4 py-3 fw-semibold position-relative overflow-hidden hover-lift-btn"
-                                    onClick={onAddToCart}
-                                    style={{
-                                        background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                                        border: 'none',
-                                        color: 'white',
-                                        borderRadius: '12px',
-                                        transition: 'all 0.3s ease',
-                                        boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
-                                    }}
-                                >
-                                    <i className="bi-cart-plus me-2"></i>
-                                    Add to Cart
-                                </button>
-
+                                {isPurchased ? (
+                                    <div className="alert alert-success d-flex align-items-center" role="alert">
+                                        <i className="bi-check-circle-fill me-2"></i>
+                                        You already own this movie! Watch it in My Movies.
+                                    </div>
+                                ) : (
+                                    <button
+                                        className="btn btn-lg px-4 py-3 fw-semibold position-relative overflow-hidden hover-lift-btn"
+                                        onClick={onAddToCart}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                                            border: 'none',
+                                            color: 'white',
+                                            borderRadius: '12px',
+                                            transition: 'all 0.3s ease',
+                                            boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
+                                        }}
+                                    >
+                                        <i className="bi-cart-plus me-2"></i>
+                                        Add to Cart
+                                    </button>
+                                )}
                             </div>
 
                         </div>

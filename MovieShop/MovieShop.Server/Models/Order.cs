@@ -16,8 +16,8 @@ namespace MovieShop.Server.Models
         public int BillingAddressId { get; set; }
         public Address BillingAddress { get; set; } = null!;
 
-        public int ShippingAddressId { get; set; }
-        public Address ShippingAddress { get; set; } = null!;
+        public int? ShippingAddressId { get; set; }
+        public Address? ShippingAddress { get; set; }
 
         public string Status { get; set; } = OrderStatus.Pending.ToString();
     }
