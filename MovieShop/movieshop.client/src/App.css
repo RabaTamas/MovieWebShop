@@ -88,6 +88,26 @@ body {
     flex: 1;
 }
 
+/* Netflix-style horizontal scroll row */
+.scroll-row {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scroll-row::-webkit-scrollbar { display: none; }
+
+.scroll-row-item {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+    position: relative;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .main-content {

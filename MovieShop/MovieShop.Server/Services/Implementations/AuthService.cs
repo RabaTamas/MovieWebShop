@@ -94,6 +94,16 @@ namespace MovieShop.Server.Services.Implementations
                 throw new ApplicationException("Invalid email or password");
             }
 
+            // If 2FA is enabled, return a challenge instead of a JWT
+            if (await _userManager.GetTwoFactorEnabledAsync(user))
+            {
+                return new AuthResultDto
+                {
+                    RequiresTwoFactor = true,
+                    TwoFactorUserId = user.Id.ToString()
+                };
+            }
+
             // Get user roles
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -202,6 +212,94 @@ namespace MovieShop.Server.Services.Implementations
             await _userManager.AddToRoleAsync(user, role);
 
             return true;
+        }
+
+        public async Task<TwoFactorSetupDto> GetTwoFactorSetupAsync(int userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new ApplicationException("User not found");
+
+            // Generate a new key if none exists yet
+            await _userManager.ResetAuthenticatorKeyAsync(user);
+            var key = await _userManager.GetAuthenticatorKeyAsync(user)
+                ?? throw new ApplicationException("Failed to generate authenticator key");
+
+            var email = user.Email ?? user.UserName ?? "user";
+            const string issuer = "MovieShop";
+            var uri = $"otpauth://totp/{Uri.EscapeDataString(issuer)}:{Uri.EscapeDataString(email)}" +
+                      $"?secret={key}&issuer={Uri.EscapeDataString(issuer)}&algorithm=SHA1&digits=6&period=30";
+
+            return new TwoFactorSetupDto { SharedKey = FormatKey(key), AuthenticatorUri = uri };
+        }
+
+        public async Task<IEnumerable<string>> EnableTwoFactorAsync(int userId, string code)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new ApplicationException("User not found");
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(
+                user, _userManager.Options.Tokens.AuthenticatorTokenProvider, code.Replace(" ", "").Replace("-", ""));
+
+            if (!isValid)
+                throw new ApplicationException("Invalid verification code");
+
+            await _userManager.SetTwoFactorEnabledAsync(user, true);
+
+            var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 8);
+            return recoveryCodes ?? Enumerable.Empty<string>();
+        }
+
+        public async Task DisableTwoFactorAsync(int userId, string code)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new ApplicationException("User not found");
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(
+                user, _userManager.Options.Tokens.AuthenticatorTokenProvider, code.Replace(" ", "").Replace("-", ""));
+
+            if (!isValid)
+                throw new ApplicationException("Invalid verification code");
+
+            await _userManager.SetTwoFactorEnabledAsync(user, false);
+            await _userManager.ResetAuthenticatorKeyAsync(user);
+        }
+
+        public async Task<AuthResultDto> TwoFactorLoginAsync(string twoFactorUserId, string code)
+        {
+            var user = await _userManager.FindByIdAsync(twoFactorUserId)
+                ?? throw new ApplicationException("User not found");
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(
+                user, _userManager.Options.Tokens.AuthenticatorTokenProvider, code.Replace(" ", "").Replace("-", ""));
+
+            if (!isValid)
+                throw new ApplicationException("Invalid authentication code");
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = GenerateJwtToken(user, roles);
+            var userDto = _mapper.Map<UserDto>(user);
+            userDto.Role = roles.FirstOrDefault() ?? "";
+
+            return new AuthResultDto { Token = token, User = userDto, TokenExpiration = DateTime.UtcNow.AddDays(7) };
+        }
+
+        public async Task<bool> GetTwoFactorStatusAsync(int userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new ApplicationException("User not found");
+            return await _userManager.GetTwoFactorEnabledAsync(user);
+        }
+
+        // Format Base32 key into groups of 4 for readability
+        private static string FormatKey(string key)
+        {
+            var result = new System.Text.StringBuilder();
+            for (int i = 0; i < key.Length; i++)
+            {
+                if (i > 0 && i % 4 == 0) result.Append(' ');
+                result.Append(key[i]);
+            }
+            return result.ToString().ToUpperInvariant();
         }
 
         public string GenerateJwtToken(User user, IList<string> roles)

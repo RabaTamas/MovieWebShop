@@ -60,6 +60,9 @@ const Navbar = () => {
                     <li className="nav-item">
                         <Link className="nav-link" to="/about">About</Link>
                     </li>
+                    <li className="nav-item">
+                        <Link className="nav-link" to="/auctions">🎬 Auctions</Link>
+                    </li>
 
                     {/* Admin Menu - Only visible for admin users */}
                     {isAdmin && (
@@ -112,6 +115,11 @@ const Navbar = () => {
                                         Manage Addresses
                                     </Link>
                                 </li>
+                                <li>
+                                    <Link className="dropdown-item" to="/admin/auctions" onClick={() => setAdminMenuOpen(false)}>
+                                        Manage Auctions
+                                    </Link>
+                                </li>
                                 
 
                                 
@@ -159,6 +167,16 @@ const Navbar = () => {
                                     <li>
                                         <Link className="dropdown-item" to="/my-movies" onClick={() => setSettingsOpen(false)}>
                                             My Movies
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link className="dropdown-item" to="/recommendations" onClick={() => setSettingsOpen(false)}>
+                                            ⭐ Recommendations
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link className="dropdown-item" to="/my-wins" onClick={() => setSettingsOpen(false)}>
+                                            🏆 My Won Auctions
                                         </Link>
                                     </li>
                                 </ul>

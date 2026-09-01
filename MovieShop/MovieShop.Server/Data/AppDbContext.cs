@@ -20,6 +20,9 @@ namespace MovieShop.Server.Data
         public DbSet<ShoppingCartMovie> ShoppingCartMovies { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<VideoProgress> VideoProgresses { get; set; }
+        public DbSet<Auction> Auctions { get; set; }
+        public DbSet<Bid> Bids { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,6 +76,48 @@ namespace MovieShop.Server.Data
             modelBuilder.Entity<Movie>()
                 .Property(m => m.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+
+            // VideoProgress: egy usernek egy filmhez csak egy rekord lehet
+            modelBuilder.Entity<VideoProgress>()
+                .HasIndex(vp => new { vp.UserId, vp.MovieId })
+                .IsUnique();
+
+            modelBuilder.Entity<VideoProgress>()
+                .HasOne(vp => vp.User)
+                .WithMany()
+                .HasForeignKey(vp => vp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VideoProgress>()
+                .HasOne(vp => vp.Movie)
+                .WithMany()
+                .HasForeignKey(vp => vp.MovieId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Auction>()
+                .HasOne(a => a.Movie)
+                .WithMany()
+                .HasForeignKey(a => a.MovieId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Auction>()
+                .HasOne(a => a.CurrentBidder)
+                .WithMany()
+                .HasForeignKey(a => a.CurrentBidderId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Bid>()
+                .HasOne(b => b.Auction)
+                .WithMany(a => a.Bids)
+                .HasForeignKey(b => b.AuctionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Bid>()
+                .HasOne(b => b.User)
+                .WithMany()
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../config/api";
 
 const Profile = () => {
@@ -164,6 +165,15 @@ const Profile = () => {
                 <button type="submit" className="btn btn-primary">Change</button>
                 {passwordMessage && <p className={passwordMessage.includes("successful") ? "success-message" : "error-message"}>{passwordMessage}</p>}
             </form>
+
+            <hr />
+
+            <h3>Security</h3>
+            <p className="text-muted">Protect your account with two-factor authentication.</p>
+            <a href="/profile/2fa" className="btn btn-outline-primary">
+                <i className="bi bi-shield-lock me-2"></i>
+                Manage Two-Factor Authentication
+            </a>
         </div>
     );
 };

@@ -74,12 +74,19 @@ services:
       # Streaming configuration
       - Streaming__BaseUrl=http://localhost:8080
       - MovieFiles__Path=/app/movie-files
+
+      # Elasticsearch
+      - Elasticsearch__Url=http://elasticsearch:9200
+
+      # Claude API (for agentic tool calling)
+      - Claude__ApiKey=${CLAUDE_API_KEY}
     ports:
       # Expose backend API on host port 5000
       - "5000:80"
     depends_on:
       database:
-        # Wait until database health check passes
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     volumes:
       # Mount movie-files directory for video uploads
@@ -106,6 +113,30 @@ services:
       - backend
     networks:
       - movieshop-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Elasticsearch Service
+  # ===========================================
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    container_name: movieshop-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - movieshop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     restart: unless-stopped
 
   # ===========================================
@@ -140,6 +171,6 @@ networks:
 # ===========================================
 volumes:
   sqlserver-data:
-    # Persistent volume for SQL Server data
-    # Data survives container restarts and removals
+    driver: local
+  elasticsearch-data:
     driver: local

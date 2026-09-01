@@ -13,13 +13,15 @@ namespace MovieShop.Server.Services.Implementations
         private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
         private readonly IConversationService _conversationService;
+        private readonly IRecommendationService _recommendationService;
 
-        public ChatService(AppDbContext context, IConfiguration configuration, IHttpClientFactory httpClientFactory, IConversationService conversationService)
+        public ChatService(AppDbContext context, IConfiguration configuration, IHttpClientFactory httpClientFactory, IConversationService conversationService, IRecommendationService recommendationService)
         {
             _context = context;
             _configuration = configuration;
             _httpClient = httpClientFactory.CreateClient();
             _conversationService = conversationService;
+            _recommendationService = recommendationService;
         }
 
         //public async Task<string> GetContextualAnswer(string question, string sessionId)
@@ -108,6 +110,48 @@ namespace MovieShop.Server.Services.Implementations
                         _conversationService.AddMessage(sessionId, "assistant", notFoundAnswer);
                         return notFoundAnswer;
                     }
+                }
+            }
+
+            // Personalized recommendations
+            if (!string.IsNullOrEmpty(userId) &&
+                (lowerQuestion.Contains("recommend") || lowerQuestion.Contains("suggest") ||
+                 lowerQuestion.Contains("what should i watch") || lowerQuestion.Contains("what should i buy") ||
+                 lowerQuestion.Contains("similar") || lowerQuestion.Contains("like what i") ||
+                 lowerQuestion.Contains("beyond") || lowerQuestion.Contains("other movie")))
+            {
+                if (int.TryParse(userId, out var recUserId))
+                {
+                    var recContext = await _recommendationService.GetRecommendationContextAsync(recUserId);
+
+                    // Build catalog context: movies available in the shop that the user hasn't bought yet
+                    var purchasedIds = await _context.OrderMovies
+                        .Include(om => om.Order)
+                        .Where(om => om.Order.UserId == recUserId)
+                        .Select(om => om.MovieId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    var availableMovies = await _context.Movies
+                        .Where(m => !m.IsDeleted && !purchasedIds.Contains(m.Id))
+                        .OrderBy(m => m.Title)
+                        .Select(m => new {
+                            m.Title,
+                            Price = m.DiscountedPrice ?? m.Price
+                        })
+                        .ToListAsync();
+
+                    var catalogSb = new StringBuilder();
+                    catalogSb.AppendLine("=== MOVIES AVAILABLE IN OUR SHOP (not yet purchased by user) ===");
+                    catalogSb.AppendLine("ONLY suggest movies from this list — do NOT invent movies outside it:");
+                    foreach (var m in availableMovies)
+                        catalogSb.AppendLine($"- {m.Title} ({m.Price} Ft)");
+
+                    var combinedContext = CombineContexts(userContext, CombineContexts(recContext, catalogSb.ToString()));
+                    var answer = await GetAIResponseWithContext(question, combinedContext, history);
+                    _conversationService.AddMessage(sessionId, "user", question);
+                    _conversationService.AddMessage(sessionId, "assistant", answer);
+                    return answer;
                 }
             }
 

@@ -18,6 +18,12 @@ using MovieShop.Server.Services.Implementations.Stripe;
 using MovieShop.Server.Services.Interfaces.Stripe;
 using Hangfire;
 using Hangfire.SqlServer;
+using MovieShop.Server.Hubs;
+using MovieShop.Server.Data.Interceptors;
+using MovieShop.Server.Services.Interfaces;
+using MovieShop.Server.Services.Implementations;
+using Nest;
+using Elasticsearch.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,9 +47,21 @@ if (!string.IsNullOrEmpty(stripeSecretKey))
 }
 
 
+// Elasticsearch
+var esUrl = builder.Configuration["Elasticsearch:Url"] ?? "http://localhost:9200";
+var esSettings = new ConnectionSettings(new Uri(esUrl))
+    .DefaultIndex("movies")
+    .EnableApiVersioningHeader(false);
+builder.Services.AddSingleton<IElasticClient>(new ElasticClient(esSettings));
+builder.Services.AddSingleton<ElasticsearchSyncInterceptor>();
+builder.Services.AddScoped<IElasticsearchService, ElasticsearchService>();
+
 // Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>((sp, options) =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.AddInterceptors(sp.GetRequiredService<ElasticsearchSyncInterceptor>());
+});
 
 builder.Services.AddIdentity<User, IdentityRole<int>>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -65,6 +83,20 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtIssuer,
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey ?? throw new InvalidOperationException("JWT Key is not configured")))
+    };
+    // SignalR WebSocket cannot send HTTP headers, so the JWT token must come from the query string
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) &&
+                context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 })
 .AddGoogle(options =>
@@ -93,6 +125,9 @@ builder.Services.AddHttpClient<ITmdbService, TmdbService>();
 builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IAdminAddressService, AdminAddressService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IAgentService, AgentService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IAuctionService, AuctionService>();
 builder.Services.AddSingleton<IConversationService, ConversationService>();
 builder.Services.AddHttpClient();
 
@@ -124,6 +159,8 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 {
     options.MultipartBodyLengthLimit = 524288000; // 500 MB
 });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddControllers();
 
@@ -164,6 +201,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<WatchPartyHub>("/hubs/watchparty");
+app.MapHub<AuctionHub>("/hubs/auction");
 
 app.MapFallbackToFile("/index.html");
 

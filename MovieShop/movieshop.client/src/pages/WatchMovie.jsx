@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import API_BASE_URL from '../config/api';
 import Hls from 'hls.js';
@@ -18,6 +18,10 @@ const WatchMovie = () => {
     const [error, setError] = useState(null);
     const [hlsQualityLevels, setHlsQualityLevels] = useState([]);
     const [selectedHlsLevel, setSelectedHlsLevel] = useState(-1); // -1 = auto
+    const [savedProgress, setSavedProgress] = useState(0);
+    const [showResumeToast, setShowResumeToast] = useState(false);
+    const saveIntervalRef = useRef(null);
+    const savedProgressRef = useRef(0); // ref hogy ne triggerelődjön újra a video setup
 
     useEffect(() => {
         const fetchMovieAndVideo = async () => {
@@ -80,6 +84,52 @@ const WatchMovie = () => {
             fetchMovieAndVideo();
         }
     }, [movieId, token]);
+
+    // Mentett pozíció lekérése
+    useEffect(() => {
+        if (!token || !movieId) return;
+
+        const fetchProgress = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/Movie/${movieId}/progress`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.progressSeconds > 5) {
+                        setSavedProgress(data.progressSeconds);
+                        savedProgressRef.current = data.progressSeconds; // ref frissítés
+                        setShowResumeToast(true);
+                        // Ha a video már betöltődött mire a progress megérkezett (race condition fix)
+                        const video = videoRef.current;
+                        if (video && video.readyState >= 1) {
+                            video.currentTime = data.progressSeconds;
+                        }
+                    }
+                }
+            } catch {
+                // Nem kritikus hiba, csendben kezeljük
+            }
+        };
+
+        fetchProgress();
+    }, [movieId, token]);
+
+    // Progress mentés helper - keepalive:true biztosítja hogy navigáláskor is lefut
+    const saveProgress = (useKeepalive = false) => {
+        const video = videoRef.current;
+        if (!video || video.currentTime < 1) return;
+
+        fetch(`${API_BASE_URL}/api/Movie/${movieId}/progress`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ progressSeconds: video.currentTime }),
+            keepalive: useKeepalive // navigáláskor ne szakadjon meg a request
+        }).catch(() => {}); // Nem kritikus hiba
+    };
 
     // Video player setup - HLS or MP4
     useEffect(() => {
@@ -180,14 +230,37 @@ const WatchMovie = () => {
             video.load();
         }
 
+        // Pozíció visszaállítás - savedProgressRef-et olvas, nem state-et!
+        const onMetadataLoaded = () => {
+            if (savedProgressRef.current > 5) {
+                video.currentTime = savedProgressRef.current;
+            }
+        };
+
+        const onPause = () => {
+            saveProgress();
+        };
+
+        video.addEventListener('loadedmetadata', onMetadataLoaded);
+        video.addEventListener('pause', onPause);
+
+        // 30 másodpercenként automatikus mentés
+        saveIntervalRef.current = setInterval(() => {
+            if (!video.paused) saveProgress();
+        }, 30000);
+
         return () => {
             if (hlsRef.current) {
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
+            video.removeEventListener('loadedmetadata', onMetadataLoaded);
+            video.removeEventListener('pause', onPause);
+            clearInterval(saveIntervalRef.current);
+            saveProgress(true); // keepalive=true: navigáláskor is lefut
             video.pause();
         };
-    }, [streamingData, token]);
+    }, [streamingData, token]); // savedProgress NINCS itt - ref-et használunk helyette
 
     // Handle HLS manual quality selection
     useEffect(() => {
@@ -278,6 +351,30 @@ const WatchMovie = () => {
                                     </div>
                                 </div>
                                 
+                                {/* Resume toast */}
+                                {showResumeToast && (
+                                    <div className="alert alert-info d-flex align-items-center justify-content-between py-2 mb-3">
+                                        <span>
+                                            <i className="bi bi-play-circle me-2"></i>
+                                            Continuing from {new Date(savedProgress * 1000).toISOString().substring(11, 19)}
+                                        </span>
+                                        <button
+                                            className="btn btn-sm btn-outline-secondary ms-3"
+                                            onClick={() => {
+                                                if (videoRef.current) videoRef.current.currentTime = 0;
+                                                setShowResumeToast(false);
+                                            }}
+                                        >
+                                            Start from beginning
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn-close ms-2"
+                                            onClick={() => setShowResumeToast(false)}
+                                        />
+                                    </div>
+                                )}
+
                                 {/* HLS Quality Selector */}
                                 {streamingData.isHls && hlsQualityLevels.length > 0 && (
                                     <div className="card bg-secondary text-white mb-3">
@@ -418,8 +515,15 @@ const WatchMovie = () => {
 
                                 {/* Quick actions */}
                                 <div className="mt-3 d-grid gap-2">
-                                    <Link 
-                                        to={`/movies/${movieId}`} 
+                                    <Link
+                                        to={`/my-movies/${movieId}/watch-party`}
+                                        className="btn btn-primary"
+                                    >
+                                        <i className="bi bi-people-fill me-2"></i>
+                                        Watch Party
+                                    </Link>
+                                    <Link
+                                        to={`/movies/${movieId}`}
                                         className="btn btn-outline-light"
                                     >
                                         <i className="bi bi-info-circle me-2"></i>

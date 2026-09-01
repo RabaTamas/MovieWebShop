@@ -9,43 +9,69 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // 2FA state
+    const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+    const [twoFactorUserId, setTwoFactorUserId] = useState('');
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+
     const navigate = useNavigate();
     const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!email || !password) {
             setError('Please enter both email and password');
             return;
         }
-
         setLoading(true);
         setError('');
-
         try {
             const response = await fetch(`${API_BASE_URL}/api/Auth/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-
             const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Login failed');
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Login failed');
+            if (data.requiresTwoFactor) {
+                setTwoFactorRequired(true);
+                setTwoFactorUserId(data.twoFactorUserId);
+                return;
             }
 
-            // Use the login function from AuthContext
             login(data);
-
-            // Navigate to home page after successful login
             navigate('/');
         } catch (err) {
             setError(err.message || 'An error occurred during login');
-            console.error('Login error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTwoFactorSubmit = async (e) => {
+        e.preventDefault();
+        if (!twoFactorCode.trim()) {
+            setError('Please enter the authentication code');
+            return;
+        }
+        setLoading(true);
+        setError('');
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/Auth/2fa/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ twoFactorUserId, code: twoFactorCode }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Invalid code');
+
+            login(data);
+            navigate('/');
+        } catch (err) {
+            setError(err.message || 'An error occurred');
+            setTwoFactorCode('');
         } finally {
             setLoading(false);
         }
@@ -54,39 +80,73 @@ const Login = () => {
     const handleGoogleSuccess = async (credentialResponse) => {
         setLoading(true);
         setError('');
-
         try {
             const response = await fetch(`${API_BASE_URL}/api/Auth/google-login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idToken: credentialResponse.credential }),
             });
-
             const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Google login failed');
-            }
-
-            // Use the login function from AuthContext
+            if (!response.ok) throw new Error(data.message || 'Google login failed');
             login(data);
-
-            // Navigate to home page after successful login
             navigate('/');
         } catch (err) {
             setError(err.message || 'An error occurred during Google login');
-            console.error('Google login error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleGoogleError = () => {
-        setError('Google login failed. Please try again.');
-    };
+    // --- 2FA step ---
+    if (twoFactorRequired) {
+        return (
+            <div className="container mt-5">
+                <div className="row justify-content-center">
+                    <div className="col-md-5">
+                        <div className="card shadow-sm">
+                            <div className="card-body p-4">
+                                <div className="text-center mb-4">
+                                    <i className="bi bi-shield-lock fs-1 text-primary"></i>
+                                    <h4 className="mt-2">Two-Factor Authentication</h4>
+                                    <p className="text-muted small">Open your authenticator app and enter the 6-digit code.</p>
+                                </div>
 
+                                {error && <div className="alert alert-danger">{error}</div>}
+
+                                <form onSubmit={handleTwoFactorSubmit}>
+                                    <div className="mb-3">
+                                        <label className="form-label">Authentication Code</label>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-lg text-center"
+                                            placeholder="000000"
+                                            maxLength={6}
+                                            value={twoFactorCode}
+                                            onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                                            autoFocus
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                    <button type="submit" className="btn btn-primary w-100" disabled={loading || twoFactorCode.length !== 6}>
+                                        {loading ? 'Verifying...' : 'Verify'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-link w-100 mt-2"
+                                        onClick={() => { setTwoFactorRequired(false); setError(''); }}
+                                    >
+                                        ← Back to login
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- Normal login ---
     return (
         <div className="container mt-5">
             <div className="row justify-content-center">
@@ -135,7 +195,7 @@ const Login = () => {
                     <div className="d-flex justify-content-center">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
-                            onError={handleGoogleError}
+                            onError={() => setError('Google login failed. Please try again.')}
                             theme="outline"
                             size="large"
                             text="continue_with"

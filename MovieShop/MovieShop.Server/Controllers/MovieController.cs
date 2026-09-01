@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MovieShop.Server.Data;
 using MovieShop.Server.DTOs;
 using MovieShop.Server.DTOs.TMDB;
+using MovieShop.Server.Models;
 using MovieShop.Server.Services;
 using MovieShop.Server.Services.Interfaces;
 using System.Security.Claims;
@@ -19,6 +22,7 @@ namespace MovieShop.Server.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IStreamingService _streamingService;
         private readonly IBlobStorageService _blobStorage;
+        private readonly AppDbContext _context;
 
         public MovieController(
             IMovieService movieService,
@@ -26,7 +30,8 @@ namespace MovieShop.Server.Controllers
             IConfiguration configuration,
             IHttpClientFactory httpClientFactory,
             IStreamingService streamingService,
-            IBlobStorageService blobStorage)
+            IBlobStorageService blobStorage,
+            AppDbContext context)
         {
             _movieService = movieService;
             _orderService = orderService;
@@ -34,6 +39,7 @@ namespace MovieShop.Server.Controllers
             _httpClientFactory = httpClientFactory;
             _streamingService = streamingService;
             _blobStorage = blobStorage;
+            _context = context;
         }
 
         [HttpGet]
@@ -503,6 +509,52 @@ namespace MovieShop.Server.Controllers
             {
                 return StatusCode(500, new { message = $"Error generating quality playlist: {ex.Message}" });
             }
+        }
+
+        // Lekéri a user lejátszási pozícióját egy filmnél
+        [Authorize]
+        [HttpGet("{id}/progress")]
+        public async Task<ActionResult<VideoProgressDto>> GetProgress(int id)
+        {
+            var userId = GetCurrentUserId();
+
+            var progress = await _context.VideoProgresses
+                .FirstOrDefaultAsync(vp => vp.UserId == userId && vp.MovieId == id);
+
+            if (progress == null)
+                return Ok(new VideoProgressDto { ProgressSeconds = 0, LastWatched = DateTime.UtcNow });
+
+            return Ok(new VideoProgressDto
+            {
+                ProgressSeconds = progress.ProgressSeconds,
+                LastWatched = progress.LastWatched
+            });
+        }
+
+        // Elmenti vagy frissíti a user lejátszási pozícióját
+        [Authorize]
+        [HttpPost("{id}/progress")]
+        public async Task<IActionResult> SaveProgress(int id, [FromBody] SaveProgressDto dto)
+        {
+            if (dto.ProgressSeconds < 0)
+                return BadRequest(new { message = "Invalid progress value." });
+
+            var userId = GetCurrentUserId();
+
+            var progress = await _context.VideoProgresses
+                .FirstOrDefaultAsync(vp => vp.UserId == userId && vp.MovieId == id);
+
+            if (progress == null)
+            {
+                progress = new VideoProgress { UserId = userId, MovieId = id };
+                _context.VideoProgresses.Add(progress);
+            }
+
+            progress.ProgressSeconds = dto.ProgressSeconds;
+            progress.LastWatched = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Progress saved." });
         }
 
         private int GetCurrentUserId()

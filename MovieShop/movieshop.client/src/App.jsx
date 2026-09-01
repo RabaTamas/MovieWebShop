@@ -28,6 +28,13 @@ import Chatbot from './components/Chatbot';
 import MyMovies from './pages/MyMovies';
 import WatchMovie from './pages/WatchMovie';
 import AdminVideoUpload from './pages/Admin/AdminVideoUpload';
+import WatchParty from './pages/WatchParty';
+import TwoFactorSetup from './pages/TwoFactorSetup';
+import Auctions from './pages/Auctions';
+import Recommendations from './pages/Recommendations';
+import AuctionDetail from './pages/AuctionDetail';
+import AdminAuctions from './pages/AdminAuctions';
+import MyWonAuctions from './pages/MyWonAuctions';
 
 function App() {
     return (
@@ -40,6 +47,16 @@ function App() {
                             {/* Public routes */}
                             <Route path="/" element={<Home />} />
                             <Route path="/about" element={<About />} />
+                            <Route path="/auctions" element={<Auctions />} />
+                            <Route path="/auctions/:id" element={<AuctionDetail />} />
+                            <Route
+                                path="/recommendations"
+                                element={
+                                    <PrivateRoute>
+                                        <Recommendations />
+                                    </PrivateRoute>
+                                }
+                            />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
                             <Route path="/movies/:id" element={<MovieDetails />} />
@@ -84,6 +101,30 @@ function App() {
                                 element={
                                     <PrivateRoute>
                                         <WatchMovie />
+                                    </PrivateRoute>
+                                }
+                            />
+                            <Route
+                                path="/my-movies/:movieId/watch-party"
+                                element={
+                                    <PrivateRoute>
+                                        <WatchParty />
+                                    </PrivateRoute>
+                                }
+                            />
+                            <Route
+                                path="/my-wins"
+                                element={
+                                    <PrivateRoute>
+                                        <MyWonAuctions />
+                                    </PrivateRoute>
+                                }
+                            />
+                            <Route
+                                path="/profile/2fa"
+                                element={
+                                    <PrivateRoute>
+                                        <TwoFactorSetup />
                                     </PrivateRoute>
                                 }
                             />
@@ -183,6 +224,14 @@ function App() {
                                 element={
                                     <AdminRoute>
                                         <AdminAddresses />
+                                    </AdminRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/auctions"
+                                element={
+                                    <AdminRoute>
+                                        <AdminAuctions />
                                     </AdminRoute>
                                 }
                             />
