@@ -80,6 +80,10 @@ services:
 
       # Claude API (for agentic tool calling)
       - Claude__ApiKey=${CLAUDE_API_KEY}
+      # Web Push (VAPID) — push értesítések aláírása; a kulcspár a .env-ben van
+      - WebPush__PublicKey=${VAPID_PUBLIC_KEY}
+      - WebPush__PrivateKey=${VAPID_PRIVATE_KEY}
+      - WebPush__Subject=${VAPID_SUBJECT:-mailto:admin@movieshop.com}
     ports:
       # Expose backend API on host port 5000
       - "5000:80"

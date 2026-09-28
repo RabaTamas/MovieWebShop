@@ -61,6 +61,12 @@ namespace MovieShop.Server.Controllers
 
                 _logger.LogInformation($"Original video uploaded to Azure Blob for movie {movieId}: {originalFileName}");
 
+                // Save the original MP4 right away: transcoding takes minutes, and until then the movie
+                // looked like it had no video (empty admin page, trailer on playback). The /stream endpoint
+                // serves the original file for an .mp4 file name; TranscodingService switches it to the
+                // HLS master playlist when done.
+                await _movieService.UpdateVideoFileNameAsync(movieId, originalFileName);
+
                 // Trigger Hangfire background job for transcoding
                 var jobId = BackgroundJob.Enqueue<ITranscodingService>(
                     x => x.TranscodeVideoAsync(movieId, originalFileName)
@@ -175,7 +181,8 @@ namespace MovieShop.Server.Controllers
                 videoFileName = movie.VideoFileName,
                 originalExists = originalExists,
                 manifestExists = manifestExists,
-                transcodingComplete = manifestExists,
+                // On re-upload the old master playlist still exists: only complete once the movie points to it
+                transcodingComplete = manifestExists && movie.VideoFileName.EndsWith("_master.m3u8"),
                 fileSizeMB = fileSize / 1024.0 / 1024.0,
                 transcodedVersions = transcodedVersions,
                 isHls = movie.VideoFileName.EndsWith("_master.m3u8")

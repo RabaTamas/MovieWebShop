@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { AlertCircle, Check, MapPin, Pencil, Trash2, TriangleAlert, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 import API_BASE_URL from "../config/api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LoadingState } from "@/components/ui/spinner";
+import { EmptyState, PageContainer, PageHeader } from "@/components/ui/page";
 
 const AdminAddresses = () => {
     const { token } = useAuth();
@@ -68,12 +77,12 @@ const AdminAddresses = () => {
     const handleSaveEdit = async (addressId) => {
         // Validation
         if (!editForm.street || !editForm.city || !editForm.zip) {
-            alert("All fields must be filled!");
+            toast.error("All fields must be filled!");
             return;
         }
 
         if (!/^\d{4}$/.test(editForm.zip)) {
-            alert("Zip must be 4 numbers");
+            toast.error("Zip must be 4 numbers");
             return;
         }
 
@@ -128,7 +137,7 @@ const AdminAddresses = () => {
             setAddresses(addresses.filter(address => address.id !== addressId));
         } catch (err) {
             console.error("Failed to delete address:", err);
-            alert(`Failed to delete address: ${err.message}`);
+            toast.error(`Failed to delete address: ${err.message}`);
         }
     };
 
@@ -138,170 +147,119 @@ const AdminAddresses = () => {
     };
 
     if (loading) {
-        return (
-            <div className="container mt-4">
-                <div className="d-flex align-items-center">
-                    <div className="spinner-border me-2" role="status"></div>
-                    <span>Loading addresses...</span>
-                </div>
-            </div>
-        );
+        return <LoadingState label="Loading addresses..." />;
     }
 
     if (error) {
         return (
-            <div className="container mt-4">
-                <div className="alert alert-danger">
-                    <strong>Error:</strong> {error}
-                </div>
-            </div>
+            <PageContainer size="md">
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription><span><strong>Error:</strong> {error}</span></AlertDescription>
+                </Alert>
+            </PageContainer>
         );
     }
 
     return (
-        <div className="container mt-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1>Manage Addresses</h1>
-                <div className="text-muted">
-                    Total: {addresses.length} addresses
-                </div>
-            </div>
+        <PageContainer size="xl">
+            <PageHeader title="Manage Addresses" icon={MapPin} description={`Total: ${addresses.length} addresses`} />
 
             {addresses.length === 0 ? (
-                <div className="alert alert-info">
-                    <i className="bi bi-info-circle me-2"></i>
-                    No addresses found in the system.
-                </div>
+                <EmptyState icon={MapPin} title="No addresses found in the system." />
             ) : (
-                <div className="table-responsive">
-                    <table className="table table-striped table-hover">
-                        <thead className="table-dark">
-                            <tr>
-                                <th>ID</th>
-                                <th>User</th>
-                                <th>Street</th>
-                                <th>City</th>
-                                <th>Zip</th>
-                                <th>Orders</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {addresses.map(address => (
-                                <tr key={address.id}>
-                                    <td>{address.id}</td>
-                                    <td>
-                                        <div>
-                                            <strong>{address.userName}</strong>
-                                            <br />
-                                            <small className="text-muted">{address.userEmail}</small>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {editingAddress === address.id ? (
-                                            <input
-                                                type="text"
-                                                name="street"
-                                                value={editForm.street}
-                                                onChange={handleInputChange}
-                                                className="form-control form-control-sm"
-                                                maxLength="100"
-                                            />
-                                        ) : (
-                                            address.street
-                                        )}
-                                    </td>
-                                    <td>
-                                        {editingAddress === address.id ? (
-                                            <input
-                                                type="text"
-                                                name="city"
-                                                value={editForm.city}
-                                                onChange={handleInputChange}
-                                                className="form-control form-control-sm"
-                                                maxLength="50"
-                                            />
-                                        ) : (
-                                            address.city
-                                        )}
-                                    </td>
-                                    <td>
-                                        {editingAddress === address.id ? (
-                                            <input
-                                                type="text"
-                                                name="zip"
-                                                value={editForm.zip}
-                                                onChange={handleInputChange}
-                                                className="form-control form-control-sm"
-                                                maxLength="4"
-                                                pattern="\d{4}"
-                                            />
-                                        ) : (
-                                            address.zip
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <small className="text-muted">
-                                                Orders: {address.billingOrdersCount || 0}
-                                            </small>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="btn-group btn-group-sm">
-                                            {editingAddress === address.id ? (
-                                                <>
-                                                    <button
-                                                        className="btn btn-success"
-                                                        onClick={() => handleSaveEdit(address.id)}
-                                                        title="Save changes"
-                                                    >
-                                                        <i className="bi bi-check"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-secondary"
-                                                        onClick={handleCancelEdit}
-                                                        title="Cancel"
-                                                    >
-                                                        <i className="bi bi-x"></i>
-                                                    </button>
-                                                </>
+                <Card className="py-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead className="w-14">ID</TableHead>
+                                <TableHead>User</TableHead>
+                                <TableHead>Street</TableHead>
+                                <TableHead>City</TableHead>
+                                <TableHead>Zip</TableHead>
+                                <TableHead>Orders</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {addresses.map(address => {
+                                const isEditing = editingAddress === address.id;
+                                return (
+                                    <TableRow key={address.id} className={isEditing ? "bg-primary/5" : undefined}>
+                                        <TableCell className="text-muted-foreground">{address.id}</TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">{address.userName}</div>
+                                            <div className="text-xs text-muted-foreground">{address.userEmail}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {isEditing ? (
+                                                <Input type="text" name="street" value={editForm.street} onChange={handleInputChange} className="h-8 min-w-40" maxLength="100" />
                                             ) : (
-                                                <>
-                                                    <button
-                                                        className="btn btn-outline-primary"
-                                                        onClick={() => handleEdit(address)}
-                                                        title="Edit address"
-                                                    >
-                                                        <i className="bi bi-pencil"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-outline-danger"
-                                                        onClick={() => handleDelete(address.id)}
-                                                        title="Delete address"
-                                                        disabled={address.billingOrdersCount > 0}
-                                                    >
-                                                        <i className="bi bi-trash"></i>
-                                                    </button>
-                                                </>
+                                                address.street
                                             )}
-                                        </div>
-                                        {(address.billingOrdersCount > 0) && (
-                                            <div className="mt-1">
-                                                <small className="text-warning">
-                                                    <i className="bi bi-exclamation-triangle"></i>
-                                                    Used in orders
-                                                </small>
+                                        </TableCell>
+                                        <TableCell>
+                                            {isEditing ? (
+                                                <Input type="text" name="city" value={editForm.city} onChange={handleInputChange} className="h-8 min-w-28" maxLength="50" />
+                                            ) : (
+                                                address.city
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {isEditing ? (
+                                                <Input type="text" name="zip" value={editForm.zip} onChange={handleInputChange} className="h-8 w-20" maxLength="4" pattern="\d{4}" />
+                                            ) : (
+                                                address.zip
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
+                                            {address.billingOrdersCount || 0}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex justify-end gap-1">
+                                                {isEditing ? (
+                                                    <>
+                                                        <Button size="icon-sm" variant="success" onClick={() => handleSaveEdit(address.id)} title="Save changes" aria-label="Save changes">
+                                                            <Check />
+                                                        </Button>
+                                                        <Button size="icon-sm" variant="outline" onClick={handleCancelEdit} title="Cancel" aria-label="Cancel">
+                                                            <X />
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Button size="icon-sm" variant="ghost" onClick={() => handleEdit(address)} title="Edit address" aria-label="Edit address">
+                                                            <Pencil />
+                                                        </Button>
+                                                        <Button
+                                                            size="icon-sm"
+                                                            variant="ghost"
+                                                            className="text-destructive hover:text-destructive"
+                                                            onClick={() => handleDelete(address.id)}
+                                                            title="Delete address"
+                                                            aria-label="Delete address"
+                                                            disabled={address.billingOrdersCount > 0}
+                                                        >
+                                                            <Trash2 />
+                                                        </Button>
+                                                    </>
+                                                )}
                                             </div>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                            {(address.billingOrdersCount > 0) && (
+                                                <div className="mt-1 flex items-center justify-end gap-1 text-xs text-primary">
+                                                    <TriangleAlert className="size-3" />
+                                                    Used in orders
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </Card>
             )}
-        </div>
+        </PageContainer>
     );
 };
 

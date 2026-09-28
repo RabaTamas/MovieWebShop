@@ -1,25 +1,34 @@
 import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { Bot, Clapperboard, Info, ShoppingBag, Sparkles, Users } from 'lucide-react';
 import MovieCard from '../components/MovieCard';
 import API_BASE_URL from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { LoadingState } from '@/components/ui/spinner';
+import { EmptyState, PageContainer, PageHeader } from '@/components/ui/page';
 
 function HorizontalRow({ movies, badge, badgeClass }) {
     return (
-        <div className="scroll-row">
+        <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-2 pb-4">
             {movies.map(movie => (
-                <div key={movie.id} className="scroll-row-item">
+                <div key={movie.id} className="relative w-40 shrink-0 snap-start sm:w-48">
                     <span
-                        className={`badge ${badgeClass} position-absolute top-0 start-0 m-2`}
-                        style={{ zIndex: 1, fontSize: '0.65rem' }}
+                        className={cn(
+                            "pointer-events-none absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold shadow",
+                            badgeClass
+                        )}
                     >
                         {badge}
                     </span>
                     <MovieCard movie={movie} />
                     {movie.reason && (
-                        <div className="small text-muted text-truncate mt-1 px-1" title={movie.reason}>
-                            <i className="bi bi-info-circle me-1" />{movie.reason}
+                        <div className="mt-1 flex items-center gap-1 truncate px-0.5 text-xs text-muted-foreground" title={movie.reason}>
+                            <Info className="size-3 shrink-0" />
+                            <span className="truncate">{movie.reason}</span>
                         </div>
                     )}
                 </div>
@@ -50,33 +59,32 @@ export default function Recommendations() {
     }, [token]);
 
     if (!token) return (
-        <div className="container mt-5 text-center">
-            <div style={{ fontSize: '3rem' }}>🎬</div>
-            <h4 className="mt-3">Log in to see your recommendations</h4>
-            <p className="text-muted">We'll suggest movies based on your purchase history.</p>
-            <Link to="/login" className="btn btn-primary mt-2">Log in</Link>
-        </div>
+        <PageContainer size="md">
+            <EmptyState
+                icon={Clapperboard}
+                title="Log in to see your recommendations"
+                description="We'll suggest movies based on your purchase history."
+            >
+                <Button asChild><Link to="/login">Log in</Link></Button>
+            </EmptyState>
+        </PageContainer>
     );
 
-    if (loading) return (
-        <div className="container mt-5 d-flex justify-content-center">
-            <div className="text-center">
-                <div className="spinner-border text-primary mb-3" role="status" />
-                <div>Loading recommendations…</div>
-            </div>
-        </div>
-    );
+    if (loading) return <LoadingState label="Loading recommendations…" />;
 
     const hasCategory      = data?.categoryBased?.length > 0;
     const hasCollaborative = data?.collaborativeBased?.length > 0;
 
     if (!hasCategory && !hasCollaborative) return (
-        <div className="container mt-5 text-center">
-            <div style={{ fontSize: '3rem' }}>🛒</div>
-            <h4 className="mt-3">No recommendations yet</h4>
-            <p className="text-muted">Purchase some movies and we'll start suggesting titles you'll love.</p>
-            <Link to="/" className="btn btn-outline-primary mt-2">Browse movies</Link>
-        </div>
+        <PageContainer size="md">
+            <EmptyState
+                icon={ShoppingBag}
+                title="No recommendations yet"
+                description="Purchase some movies and we'll start suggesting titles you'll love."
+            >
+                <Button variant="outline" asChild><Link to="/">Browse movies</Link></Button>
+            </EmptyState>
+        </PageContainer>
     );
 
     const openAiChat = () => {
@@ -93,59 +101,47 @@ export default function Recommendations() {
     };
 
     return (
-        <div className="container mt-4">
-            <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-                <div>
-                    <h3>
-                        <i className="bi bi-stars me-2 text-warning"></i>
-                        {" "}Your Recommendations
-                    </h3>
-                    <p className="text-muted mb-0">
-                        Personalised picks based on your purchase history and customers with similar taste.
-                    </p>
-                </div>
-                <button
-                    className="btn btn-outline-primary"
-                    onClick={openAiChat}
-                    title="Ask the AI chatbot for more personalised suggestions"
-                >
-                    🤖 Ask AI for more suggestions
-                </button>
-            </div>
+        <PageContainer size="xl">
+            <PageHeader
+                title="Your Recommendations"
+                icon={Sparkles}
+                description="Personalised picks based on your purchase history and customers with similar taste."
+            >
+                <Button variant="outline" onClick={openAiChat} title="Ask the AI chatbot for more personalised suggestions">
+                    <Bot className="text-primary" />
+                    Ask AI for more suggestions
+                </Button>
+            </PageHeader>
 
             {hasCategory && (
-                <section className="mb-5">
-                    <h5 className="mb-3">
-                        <i className="bi bi-stars me-2 text-warning"></i>
-                        {" "}Recommended for You
-                        <span className="badge bg-warning text-dark ms-2" style={{ fontSize: '0.7rem' }}>
-                            Category match
-                        </span>
-                    </h5>
+                <section className="mb-10">
+                    <h2 className="mb-2 flex flex-wrap items-center gap-2 text-xl font-semibold">
+                        <Sparkles className="size-5 text-primary" />
+                        Recommended for You
+                        <Badge variant="warning">Category match</Badge>
+                    </h2>
                     <HorizontalRow
                         movies={data.categoryBased}
-                        badge={<><i className="bi bi-stars me-1" />Recommended</>}
-                        badgeClass="bg-warning text-dark"
+                        badge={<><Sparkles className="size-3" />Recommended</>}
+                        badgeClass="bg-primary text-primary-foreground"
                     />
                 </section>
             )}
 
             {hasCollaborative && (
-                <section className="mb-5">
-                    <h5 className="mb-3">
-                        <i className="bi bi-people me-2 text-info"></i>
-                        {" "}Customers Also Bought
-                        <span className="badge bg-info text-dark ms-2" style={{ fontSize: '0.7rem' }}>
-                            Similar taste
-                        </span>
-                    </h5>
+                <section className="mb-10">
+                    <h2 className="mb-2 flex flex-wrap items-center gap-2 text-xl font-semibold">
+                        <Users className="size-5 text-sky-400" />
+                        Customers Also Bought
+                        <Badge className="border-transparent bg-sky-500/15 text-sky-400">Similar taste</Badge>
+                    </h2>
                     <HorizontalRow
                         movies={data.collaborativeBased}
-                        badge={<><i className="bi bi-people me-1" />Popular pick</>}
-                        badgeClass="bg-info text-dark"
+                        badge={<><Users className="size-3" />Popular pick</>}
+                        badgeClass="bg-sky-500 text-white"
                     />
                 </section>
             )}
-        </div>
+        </PageContainer>
     );
 }

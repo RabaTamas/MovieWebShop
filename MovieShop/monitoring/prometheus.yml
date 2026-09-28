@@ -1,0 +1,44 @@
+# Prometheus konfiguráció a MovieShop mikroszervíz stackhez.
+#
+# A célpontok a Compose belső hálózatának nevei (movieshop-ms-network), ezért
+# a Prometheusnak is ezen a hálózaton kell futnia. A service-ek a 8080-as porton
+# hallgatnak a konténeren belül — a hostra kitett 520x-es portok itt nem érdekesek.
+#
+# 10 másodperces mintavétel: elég sűrű ahhoz, hogy egy néhány perces terheléstesztben
+# látszódjon a felfutás és a visszaállás, de nem terheli feleslegesen a rendszert.
+
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+  external_labels:
+    stack: movieshop-microservices
+
+scrape_configs:
+  # ── A hat .NET alkalmazás ────────────────────────────────────────────────────
+  - job_name: movieshop-services
+    metrics_path: /metrics
+    static_configs:
+      - targets: [gateway:8080]
+        labels: { service: gateway, role: edge }
+      - targets: [userservice:8080]
+        labels: { service: userservice, role: backend }
+      - targets: [catalogservice:8080]
+        labels: { service: catalogservice, role: backend }
+      - targets: [orderservice:8080]
+        labels: { service: orderservice, role: backend }
+      - targets: [auctionservice:8080]
+        labels: { service: auctionservice, role: backend }
+      - targets: [chatservice:8080]
+        labels: { service: chatservice, role: backend }
+
+  # ── Konténerszintű CPU/memória (alkalmazásmódosítás nélkül) ──────────────────
+  # A cAdvisor minden konténerről ad erőforrás-metrikát, így az is látszik, hogy
+  # terhelés alatt melyik service éri el a CPU- vagy memóriaplafont.
+  - job_name: containers
+    static_configs:
+      - targets: [cadvisor:8080]
+
+  # ── Maga a Prometheus (hasznos annak ellenőrzésére, hogy él-e a gyűjtés) ─────
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]

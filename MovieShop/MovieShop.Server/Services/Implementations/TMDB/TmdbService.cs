@@ -40,5 +40,28 @@ namespace MovieShop.Server.Services.Implementations.TMDB
             var content = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<TmdbMovieDetailsDto>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
+
+        public async Task<TmdbMovieExtrasDto?> GetMovieExtrasAsync(int tmdbId)
+        {
+            try
+            {
+                // Egyetlen kérés: részletek + képek + stáb; a képeknél az angol és a szöveg nélküli változatok kellenek
+                var response = await _httpClient.GetAsync(
+                    $"{_baseUrl}/movie/{tmdbId}?api_key={_apiKey}&append_to_response=images,credits&include_image_language=en,null");
+
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var content = await response.Content.ReadAsStringAsync();
+                var movie = JsonSerializer.Deserialize<TmdbMovieFullDto>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return movie == null ? null : TmdbMovieExtrasDto.From(movie);
+            }
+            catch (Exception)
+            {
+                // A bővített adatok opcionálisak: TMDB-hiba esetén a filmadatlap nélkülük is betölt
+                return null;
+            }
+        }
     }
 }

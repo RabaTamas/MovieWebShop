@@ -1,0 +1,420 @@
+# ==============================================================================
+# MovieShop — Mikroszervíz architektúra
+# ==============================================================================
+# Ez a stack a docker-compose.yml (monolit) MELLETT fut, nem helyette.
+# Minden hostport eltolva, hogy a kettő egyszerre is elindítható legyen
+# és összemérhető legyen a teljesítményük.
+#
+#   Monolit stack            Mikroszervíz stack
+#   ─────────────            ──────────────────
+#   frontend      :3000      frontend        :3001   <-- itt éred el a felületet
+#                            gateway         :5200
+#   backend       :5000      user            :5201
+#   sqlserver     :1433      catalog         :5202
+#   elasticsearch :9200      order           :5203
+#   streaming     :8080      auction         :5204
+#                            chat            :5205
+#                            sqlserver       :1434
+#                            elasticsearch   :9201
+#                            rabbitmq        :5672 / :15672
+#                            streaming       :8081
+#
+# Indítás:  docker compose -f docker-compose.microservices.yml up -d --build
+# ==============================================================================
+
+# KÜLÖN PROJEKTNÉV — ez kritikus.
+# A Compose alapértelmezésben a mappanévből képzi a projekt nevét, így mindkét
+# compose fájl "movieshop" néven futna. Ilyenkor a második `up` a másik stack
+# konténereit árvának tekintené és leállítaná. A külön névvel a két architektúra
+# egymástól függetlenül indítható és állítható le.
+name: movieshop-ms
+
+services:
+
+  # ===========================================================================
+  # Infrastruktúra
+  # ===========================================================================
+
+  # Egyetlen SQL Server példány, service-enként külön adatbázissal.
+  # Az izolációt a külön DbContext és connection string kényszeríti ki:
+  # egyik service sem lát rá a másik tábláira, és cross-database join sem
+  # lehetséges. Négy külön konténer ~6 GB RAM-ot vinne el anélkül, hogy az
+  # architekturális érvhez bármit hozzátenne.
+  ms-database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: movieshop-ms-db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD:-YourStrong@Password123}
+      - MSSQL_PID=Express
+    ports:
+      - "1434:1433"
+    volumes:
+      - ms-sqlserver-data:/var/opt/mssql
+    networks:
+      - movieshop-ms-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $${SA_PASSWORD:-YourStrong@Password123} -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  # Az aszinkron kommunikáció gerince. A MassTransit absztrakció miatt a kód
+  # brókerfüggetlen — Azure Service Busra váltáshoz egyetlen sort kell átírni
+  # a ServiceDefaultsExtensions.cs-ben.
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: movieshop-ms-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # webes kezelőfelület
+    volumes:
+      - ms-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - movieshop-ms-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # Kizárólag a Catalog Service használja — a `movies` index az ő tulajdona.
+  ms-elasticsearch:
+    image: elasticsearch:7.17.9
+    container_name: movieshop-ms-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9201:9200"
+    volumes:
+      - ms-elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - movieshop-ms-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Mikroszervizek
+  # ===========================================================================
+
+  # Identitás és hitelesítés. Ez az EGYETLEN service, amely JWT tokent állít ki;
+  # a többi csak validál.
+  userservice:
+    build:
+      context: ./services
+      dockerfile: MovieShop.UserService/Dockerfile
+    container_name: movieshop-ms-user
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Server=ms-database;Database=MovieShop.Users;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - Jwt__Key=${JWT_KEY:-Dev_a8f5f167f44f4964e6c998dee827110c_MovieShop_SecretKey_2025}
+      - Jwt__Issuer=${JWT_ISSUER:-MovieShop}
+      - Jwt__Audience=${JWT_AUDIENCE:-MovieShopClient}
+      - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID}
+      - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=${RABBITMQ_USER:-guest}
+      - RabbitMq__Password=${RABBITMQ_PASS:-guest}
+      - Services__OrderService=http://orderservice:8080
+      - Services__AuctionService=http://auctionservice:8080
+      # Web Push (VAPID) — a feliratkozások és a küldés a User Service-ben élnek
+      - WebPush__PublicKey=${VAPID_PUBLIC_KEY}
+      - WebPush__PrivateKey=${VAPID_PRIVATE_KEY}
+      - WebPush__Subject=${VAPID_SUBJECT:-mailto:admin@movieshop.com}
+      - CORS__AllowedOrigins=${MS_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5200}
+    ports:
+      - "5201:8080"
+    depends_on:
+      ms-database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # Filmek, kategóriák, értékelések, keresés, streaming.
+  # Itt él az Entitlements projekció, amiből a lejátszás jogosultsága eldől.
+  catalogservice:
+    build:
+      context: ./services
+      dockerfile: MovieShop.CatalogService/Dockerfile
+    container_name: movieshop-ms-catalog
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Server=ms-database;Database=MovieShop.Catalog;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - Jwt__Key=${JWT_KEY:-Dev_a8f5f167f44f4964e6c998dee827110c_MovieShop_SecretKey_2025}
+      - Jwt__Issuer=${JWT_ISSUER:-MovieShop}
+      - Jwt__Audience=${JWT_AUDIENCE:-MovieShopClient}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=${RABBITMQ_USER:-guest}
+      - RabbitMq__Password=${RABBITMQ_PASS:-guest}
+      - Elasticsearch__Url=http://ms-elasticsearch:9200
+      - TmdbApi__ApiKey=${TMDB_API_KEY}
+      - AzureBlob__ConnectionString=${AZURE_BLOB_CONNECTION_STRING}
+      - AzureBlob__ContainerName=${AZURE_BLOB_CONTAINER:-movie-videos}
+      - Streaming__BaseUrl=http://localhost:8081
+      - Streaming__SecretKey=${STREAMING_SECRET_KEY:-moviesecretkey123}
+      - PublicBaseUrl=${MS_PUBLIC_BASE_URL:-http://localhost:5200}
+      - CORS__AllowedOrigins=${MS_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5200}
+    ports:
+      - "5202:8080"
+    depends_on:
+      ms-database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      ms-elasticsearch:
+        condition: service_healthy
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # Kosár, rendelés, fizetés, ajánlórendszer.
+  # A MovieSnapshot replika miatt a kollaboratív szűrés lokális join marad.
+  orderservice:
+    build:
+      context: ./services
+      dockerfile: MovieShop.OrderService/Dockerfile
+    container_name: movieshop-ms-order
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Server=ms-database;Database=MovieShop.Orders;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - Jwt__Key=${JWT_KEY:-Dev_a8f5f167f44f4964e6c998dee827110c_MovieShop_SecretKey_2025}
+      - Jwt__Issuer=${JWT_ISSUER:-MovieShop}
+      - Jwt__Audience=${JWT_AUDIENCE:-MovieShopClient}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=${RABBITMQ_USER:-guest}
+      - RabbitMq__Password=${RABBITMQ_PASS:-guest}
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
+      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
+      - Services__UserService=http://userservice:8080
+      - CORS__AllowedOrigins=${MS_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5200}
+    ports:
+      - "5203:8080"
+    depends_on:
+      ms-database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # Valós idejű aukció. Önálló service, mert a terhelési profilja teljesen
+  # eltér a webshop többi részétől (SignalR, licitcsúcsok).
+  auctionservice:
+    build:
+      context: ./services
+      dockerfile: MovieShop.AuctionService/Dockerfile
+    container_name: movieshop-ms-auction
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Server=ms-database;Database=MovieShop.Auctions;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - Jwt__Key=${JWT_KEY:-Dev_a8f5f167f44f4964e6c998dee827110c_MovieShop_SecretKey_2025}
+      - Jwt__Issuer=${JWT_ISSUER:-MovieShop}
+      - Jwt__Audience=${JWT_AUDIENCE:-MovieShopClient}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=${RABBITMQ_USER:-guest}
+      - RabbitMq__Password=${RABBITMQ_PASS:-guest}
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
+      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
+      - CORS__AllowedOrigins=${MS_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5200}
+    ports:
+      - "5204:8080"
+    depends_on:
+      ms-database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # AI chatbot. Az egyetlen service saját adatbázis nélkül: a beszélgetések
+  # memóriában élnek, minden más adat REST-en érkezik a többi service-től.
+  chatservice:
+    build:
+      context: ./services
+      dockerfile: MovieShop.ChatService/Dockerfile
+    container_name: movieshop-ms-chat
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - Jwt__Key=${JWT_KEY:-Dev_a8f5f167f44f4964e6c998dee827110c_MovieShop_SecretKey_2025}
+      - Jwt__Issuer=${JWT_ISSUER:-MovieShop}
+      - Jwt__Audience=${JWT_AUDIENCE:-MovieShopClient}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=${RABBITMQ_USER:-guest}
+      - RabbitMq__Password=${RABBITMQ_PASS:-guest}
+      - Groq__ApiKey=${GROQ_API_KEY}
+      - Services__CatalogService=http://catalogservice:8080
+      - Services__OrderService=http://orderservice:8080
+      - Services__UserService=http://userservice:8080
+      - CORS__AllowedOrigins=${MS_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5200}
+    ports:
+      - "5205:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # API Gateway — a rendszer egyetlen kifelé látszó belépési pontja
+  # ===========================================================================
+  gateway:
+    build:
+      context: ./services
+      dockerfile: MovieShop.Gateway/Dockerfile
+    container_name: movieshop-ms-gateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - Jwt__Key=${JWT_KEY:-Dev_a8f5f167f44f4964e6c998dee827110c_MovieShop_SecretKey_2025}
+      - Jwt__Issuer=${JWT_ISSUER:-MovieShop}
+      - Jwt__Audience=${JWT_AUDIENCE:-MovieShopClient}
+      - CORS__AllowedOrigins=${MS_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    ports:
+      - "5200:8080"
+    depends_on:
+      - userservice
+      - catalogservice
+      - orderservice
+      - auctionservice
+      - chatservice
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Frontend — UGYANAZ a React kód, mint a monolit stackben
+  # ===========================================================================
+  # A kliens forrása egyetlen sort sem változott. A különbség kizárólag a
+  # VITE_API_URL build argumentum: a monolit stackben :5000-re (a backendre),
+  # itt :5200-ra (a gatewayre) mutat.
+  #
+  # Ez azért működik, mert a gateway pontosan ugyanazokat az útvonalakat
+  # kínálja, mint a monolit — a szétbontás a frontend felől láthatatlan.
+  frontend:
+    build:
+      context: ./movieshop.client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${MS_FRONTEND_API_URL:-http://localhost:5200}
+    container_name: movieshop-ms-frontend
+    ports:
+      # Alapértelmezés 3001, mert a 3000-et a monolit frontendje foglalja.
+      # A Google-bejelentkezés csak a Google Cloud Console-ban engedélyezett
+      # eredetekről működik; ha ott csak a :3000 szerepel, a monolit frontendjének
+      # leállítása után így futtatható a :3000-en:
+      #   MS_FRONTEND_PORT=3000 docker compose -f docker-compose.microservices.yml up -d frontend
+      - "${MS_FRONTEND_PORT:-3001}:80"
+    depends_on:
+      - gateway
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Streaming (nginx secure_link) — változatlanul átvéve a monolit stackből
+  # ===========================================================================
+  ms-streaming:
+    build:
+      context: ./nginx-streaming
+      dockerfile: Dockerfile
+    container_name: movieshop-ms-streaming
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./movie-files:/var/www/movies:ro
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Megfigyelés (Prometheus + Grafana + cAdvisor)
+  # ===========================================================================
+  # Csak a mikroszervíz stackhez tartozik. A service-ek a /metrics végponton
+  # adják ki a válaszidőt, kérésszámot, hibaarányt és a .NET futásidejű mutatóit;
+  # a cAdvisor ezen felül konténerenkénti CPU- és memóriahasználatot mér, az
+  # alkalmazások módosítása nélkül.
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: movieshop-ms-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      # Az /metrics oldalon a lekérdezésekhez kell a webes felület
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ms-prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: movieshop-ms-grafana
+    environment:
+      # Demóhoz: jelszó nélküli belépés, hogy a méréseket egy kattintással lehessen nézni
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_USERS_DEFAULT_THEME=dark
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ms-grafana-data:/var/lib/grafana
+    ports:
+      # A 3000 és 3001 a két frontendé, ezért 3002
+      - "3002:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: movieshop-ms-cadvisor
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - movieshop-ms-network
+    restart: unless-stopped
+
+networks:
+  movieshop-ms-network:
+    driver: bridge
+
+volumes:
+  ms-sqlserver-data:
+    driver: local
+  ms-elasticsearch-data:
+    driver: local
+  ms-rabbitmq-data:
+    driver: local
+  ms-prometheus-data:
+    driver: local
+  ms-grafana-data:
+    driver: local

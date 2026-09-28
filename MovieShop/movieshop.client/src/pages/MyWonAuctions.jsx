@@ -2,10 +2,16 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { toast } from 'sonner';
+import { CheckCircle2, CreditCard, ExternalLink, Trophy } from 'lucide-react';
 import StripeCheckout from '../components/StripeCheckout';
 import API_BASE_URL from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
-import './MyWonAuctions.css';
+import { cn, formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { LoadingState } from '@/components/ui/spinner';
+import { EmptyState, PageContainer, PageHeader } from '@/components/ui/page';
 
 export default function MyWonAuctions() {
     const { token } = useAuth();
@@ -31,7 +37,7 @@ export default function MyWonAuctions() {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (!r.ok) { alert('Payment not available for this auction.'); return; }
+            if (!r.ok) { toast.error('Payment not available for this auction.'); return; }
             const data = await r.json();
             setPaymentState(prev => ({
                 ...prev,
@@ -41,7 +47,7 @@ export default function MyWonAuctions() {
                     paid: false
                 }
             }));
-        } catch { alert('Network error.'); }
+        } catch { toast.error('Network error.'); }
     };
 
     const handlePaymentSuccess = async (auctionId, paymentMethodId) => {
@@ -51,7 +57,7 @@ export default function MyWonAuctions() {
         const { error, paymentIntent } = await stripe.confirmCardPayment(ps.clientSecret, {
             payment_method: paymentMethodId
         });
-        if (error) { alert('Payment failed: ' + error.message); return; }
+        if (error) { toast.error('Payment failed: ' + error.message); return; }
         if (paymentIntent.status === 'succeeded') {
             const r = await fetch(`${API_BASE_URL}/api/Auction/${auctionId}/confirm-payment`, {
                 method: 'POST',
@@ -67,84 +73,92 @@ export default function MyWonAuctions() {
                     prev.map(a => a.id === auctionId ? { ...a, isPaid: true } : a)
                 );
             } else {
-                alert('Payment confirmed by Stripe but server verification failed.');
+                toast.error('Payment confirmed by Stripe but server verification failed.');
             }
         }
     };
 
-    if (loading) return (
-        <div className="mwa-loading">
-            <div className="spinner-border text-primary" role="status" />
-            <p>Loading your won auctions…</p>
-        </div>
-    );
+    if (loading) return <LoadingState label="Loading your won auctions…" />;
 
     if (wonAuctions.length === 0) return (
-        <div className="mwa-empty">
-            <div className="mwa-empty-icon">🏆</div>
-            <h3>No won auctions yet</h3>
-            <p className="text-muted">Win an auction and your items will appear here for payment.</p>
-            <Link to="/auctions" className="btn btn-primary mt-2">Browse Auctions</Link>
-        </div>
+        <PageContainer size="md">
+            <EmptyState
+                icon={Trophy}
+                title="No won auctions yet"
+                description="Win an auction and your items will appear here for payment."
+            >
+                <Button asChild><Link to="/auctions">Browse Auctions</Link></Button>
+            </EmptyState>
+        </PageContainer>
     );
 
     const unpaidCount = wonAuctions.filter(a => !a.isPaid && !paymentState[a.id]?.paid).length;
 
     return (
-        <div className="mwa-page">
-            <div className="mwa-header">
-                <h1>🏆 My Won Auctions</h1>
-                <p className="text-muted">
-                    {unpaidCount > 0
-                        ? `You have ${unpaidCount} unpaid auction${unpaidCount > 1 ? 's' : ''}. Pay now to receive your items.`
-                        : 'All your won auctions are paid. Enjoy your movies!'}
-                </p>
-            </div>
+        <PageContainer size="lg" className="max-w-4xl">
+            <PageHeader
+                title="My Won Auctions"
+                icon={Trophy}
+                description={unpaidCount > 0
+                    ? `You have ${unpaidCount} unpaid auction${unpaidCount > 1 ? 's' : ''}. Pay now to receive your items.`
+                    : 'All your won auctions are paid. Enjoy your movies!'}
+            />
 
-            <div className="mwa-list">
+            <div className="space-y-4">
                 {wonAuctions.map(a => {
                     const ps = paymentState[a.id];
                     const isPaid = a.isPaid || ps?.paid;
 
                     return (
-                        <div key={a.id} className={`mwa-card ${isPaid ? 'paid' : 'unpaid'}`}>
-                            <div className="mwa-card-img">
-                                <img src={a.imageUrl} alt={a.title} />
-                                {isPaid
-                                    ? <span className="mwa-badge paid-badge">✅ Paid</span>
-                                    : <span className="mwa-badge unpaid-badge">💳 Unpaid</span>}
+                        <div
+                            key={a.id}
+                            className={cn(
+                                "flex flex-col overflow-hidden rounded-xl border bg-card sm:flex-row",
+                                isPaid ? "border-success/30" : "border-primary/40"
+                            )}
+                        >
+                            <div className="relative aspect-video shrink-0 bg-muted sm:aspect-auto sm:w-44">
+                                <img src={a.imageUrl} alt={a.title} className="size-full object-cover" />
+                                <div className="absolute top-2 left-2">
+                                    {isPaid
+                                        ? <Badge className="bg-success text-white"><CheckCircle2 />Paid</Badge>
+                                        : <Badge><CreditCard />Unpaid</Badge>}
+                                </div>
                             </div>
 
-                            <div className="mwa-card-body">
-                                <h4 className="mwa-title">{a.title}</h4>
-                                <div className="mwa-price-row">
+                            <div className="flex flex-1 flex-col gap-4 p-5">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>
-                                        <div className="mwa-label">Final bid</div>
-                                        <div className="mwa-price">{a.currentPrice.toLocaleString()} Ft</div>
+                                        <h2 className="text-xl font-semibold">{a.title}</h2>
+                                        <div className="mt-1 text-xs tracking-wider text-muted-foreground uppercase">Final bid</div>
+                                        <div className="text-2xl font-bold text-primary">{formatPrice(a.currentPrice)}</div>
                                     </div>
-                                    <Link to={`/auctions/${a.id}`} className="btn btn-sm btn-outline-secondary">
-                                        View auction
-                                    </Link>
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link to={`/auctions/${a.id}`}>View auction <ExternalLink /></Link>
+                                    </Button>
                                 </div>
 
                                 {isPaid ? (
-                                    <div className="mwa-paid-banner">
-                                        ✅ Payment complete — your item is on its way!
+                                    <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
+                                        <CheckCircle2 className="size-4" />
+                                        Payment complete — your item is on its way!
                                     </div>
                                 ) : ps?.clientSecret ? (
-                                    <div className="mwa-payment-form">
-                                        <h6 className="mb-3">Complete your payment</h6>
+                                    <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+                                        <h3 className="font-medium">Complete your payment</h3>
                                         {ps.stripePromise && (
                                             <Elements stripe={ps.stripePromise} options={{ clientSecret: ps.clientSecret }}>
                                                 <StripeCheckout
                                                     amount={a.currentPrice}
                                                     onSuccess={(pmId) => handlePaymentSuccess(a.id, pmId)}
-                                                    onError={(msg) => alert('Payment error: ' + msg)}
+                                                    onError={(msg) => toast.error('Payment error: ' + msg)}
                                                 />
                                             </Elements>
                                         )}
-                                        <button
-                                            className="btn btn-sm btn-outline-secondary mt-2"
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="w-full"
                                             onClick={() => setPaymentState(prev => {
                                                 const next = { ...prev };
                                                 delete next[a.id];
@@ -152,21 +166,18 @@ export default function MyWonAuctions() {
                                             })}
                                         >
                                             Cancel
-                                        </button>
+                                        </Button>
                                     </div>
                                 ) : (
-                                    <button
-                                        className="btn-pay-auction"
-                                        onClick={() => handleStartPayment(a.id)}
-                                    >
-                                        💳 Pay {a.currentPrice.toLocaleString()} Ft
-                                    </button>
+                                    <Button size="lg" className="self-start" onClick={() => handleStartPayment(a.id)}>
+                                        <CreditCard /> Pay {formatPrice(a.currentPrice)}
+                                    </Button>
                                 )}
                             </div>
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </PageContainer>
     );
 }

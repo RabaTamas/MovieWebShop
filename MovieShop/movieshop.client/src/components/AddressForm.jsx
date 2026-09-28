@@ -1,4 +1,10 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { CheckCircle2, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const AddressForm = ({ title, initialAddress, onSave }) => {
     const [address, setAddress] = useState(initialAddress || {
@@ -22,12 +28,12 @@ const AddressForm = ({ title, initialAddress, onSave }) => {
 
     const handleSave = () => {
         if (!address.street || !address.city || !address.zip) {
-            alert("Every field must be filled!");
+            toast.error("Every field must be filled!");
             return;
         }
 
         if (!/^\d{4}$/.test(address.zip)) {
-            alert("Zip must be 4 numbers");
+            toast.error("Zip must be 4 numbers");
             return;
         }
 
@@ -36,42 +42,41 @@ const AddressForm = ({ title, initialAddress, onSave }) => {
         setTimeout(() => setSavedMessage(""), 2000);
     };
 
-
     return (
-        <div className="mb-4 p-3 border rounded">
-            <h5>{title}</h5>
-            <div className="mb-2">
-                <label>Street, house number:</label>
-                <input
-                    name="street"
-                    value={address.street}
-                    onChange={handleChange}
-                    className="form-control"
-                />
-            </div>
-            <div className="mb-2">
-                <label>City:</label>
-                <input
-                    name="city"
-                    value={address.city}
-                    onChange={handleChange}
-                    className="form-control"
-                />
-            </div>
-            <div className="mb-2">
-                <label>Zip:</label>
-                <input
-                    name="zip"
-                    value={address.zip}
-                    onChange={handleChange}
-                    className="form-control"
-                />
-            </div>
-            <button className="btn btn-primary" onClick={handleSave}>
-                Save
-            </button>
-            {savedMessage && <div className="mt-2 text-success">{savedMessage}</div>}
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <MapPin className="size-4 text-primary" />
+                    {title}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="address-street">Street, house number</Label>
+                    <Input id="address-street" name="street" value={address.street} onChange={handleChange} />
+                </div>
+                <div className="grid grid-cols-[1fr_110px] gap-3">
+                    <div className="space-y-2">
+                        <Label htmlFor="address-city">City</Label>
+                        <Input id="address-city" name="city" value={address.city} onChange={handleChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="address-zip">Zip</Label>
+                        <Input id="address-zip" name="zip" inputMode="numeric" value={address.zip} onChange={handleChange} />
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button variant="secondary" onClick={handleSave}>
+                        Save
+                    </Button>
+                    {savedMessage && (
+                        <span className="flex items-center gap-1.5 text-sm text-success">
+                            <CheckCircle2 className="size-4" /> {savedMessage}
+                        </span>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
     );
 };
 

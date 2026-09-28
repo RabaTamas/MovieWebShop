@@ -1,0 +1,22 @@
+# Grafana dashboard-betöltő — a JSON fájlok induláskor automatikusan betöltődnek,
+# így a mérésekhez nem kell kézzel importálni semmit.
+#
+# A Compose ezt a mappát csatolja be:
+#   ./monitoring/grafana/provisioning -> /etc/grafana/provisioning
+# ezért a dashboard JSON-ok ugyanide, e fájl mellé kerülnek.
+
+apiVersion: 1
+
+providers:
+  - name: MovieShop
+    orgId: 1
+    folder: MovieShop
+    type: file
+    disableDeletion: false
+    # A Grafana figyeli a mappát: ha menet közben módosul egy dashboard,
+    # újraindítás nélkül frissül
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

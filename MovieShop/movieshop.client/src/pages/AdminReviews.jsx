@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { AlertCircle, MessageSquareText, Trash2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 import API_BASE_URL from "../config/api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LoadingState } from "@/components/ui/spinner";
+import { PageContainer, PageHeader } from "@/components/ui/page";
 
 const AdminReviews = () => {
     const { token } = useAuth();
@@ -68,74 +75,84 @@ const AdminReviews = () => {
     };
 
     if (loading) {
-        return <div className="container mt-4"><div className="spinner-border" role="status"></div> Loading reviews...</div>;
+        return <LoadingState label="Loading reviews..." />;
     }
 
     if (error) {
-        return <div className="container mt-4 alert alert-danger">Error: {error}</div>;
+        return (
+            <PageContainer size="md">
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription>Error: {error}</AlertDescription>
+                </Alert>
+            </PageContainer>
+        );
     }
 
     return (
-        <div className="container mt-4">
-            <h1 className="mb-4">Manage Reviews</h1>
-            <p className="text-muted mb-4">As an admin, you can only delete reviews. Users can create and edit their own reviews.</p>
+        <PageContainer size="xl">
+            <PageHeader
+                title="Manage Reviews"
+                icon={MessageSquareText}
+                description="As an admin, you can only delete reviews. Users can create and edit their own reviews."
+            />
 
-            <div className="table-responsive">
-                <table className="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Movie</th>
-                            <th>User</th>
-                            <th>Content</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <Card className="py-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                            <TableHead className="w-14">ID</TableHead>
+                            <TableHead>Movie</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead>Content</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {reviews.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" className="text-center">No reviews found</td>
-                            </tr>
+                            <TableRow>
+                                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">No reviews found</TableCell>
+                            </TableRow>
                         ) : (
                             reviews.map(review => (
-                                <tr key={review.id}>
-                                    <td>{review.id}</td>
-                                    <td>
+                                <TableRow key={review.id}>
+                                    <TableCell className="text-muted-foreground">{review.id}</TableCell>
+                                    <TableCell className="font-medium">
                                         {review.movie ? (
-                                            <Link to={`/movies/${review.movie.id}`}>
+                                            <Link to={`/movies/${review.movie.id}`} className="hover:text-primary hover:underline">
                                                 {review.movie.title}
                                             </Link>
                                         ) : (
-                                            <span className="text-muted">Movie not found</span>
+                                            <span className="text-muted-foreground">Movie not found</span>
                                         )}
-                                    </td>
-                                    <td>{review.user ? review.user.name : 'Unknown User'}</td>
-                                    <td>
-                                        <div className="review-content">
-                                            {review.content.length > 100
-                                                ? `${review.content.substring(0, 100)}...`
-                                                : review.content
-                                            }
-                                        </div>
-                                    </td>
-                                    <td>{new Date(review.createdAt).toLocaleDateString()}</td>
-                                    <td>
-                                        <button
-                                            className="btn btn-sm btn-danger"
+                                    </TableCell>
+                                    <TableCell>{review.user ? review.user.name : 'Unknown User'}</TableCell>
+                                    <TableCell className="max-w-md min-w-60 whitespace-normal text-muted-foreground">
+                                        {review.content.length > 100
+                                            ? `${review.content.substring(0, 100)}...`
+                                            : review.content
+                                        }
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-destructive hover:text-destructive"
                                             onClick={() => handleDeleteReview(review.id)}
                                             title="Delete review"
                                         >
-                                            <i className="bi bi-trash"></i> Delete
-                                        </button>
-                                    </td>
-                                </tr>
+                                            <Trash2 /> Delete
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
                             ))
                         )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    </TableBody>
+                </Table>
+            </Card>
+        </PageContainer>
     );
 };
 

@@ -1,9 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { AlertCircle, CheckCircle2, Eye, Gavel, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import API_BASE_URL from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
+import { formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
+import { PageContainer, PageHeader } from '@/components/ui/page';
 
 const statusLabel = { 0: 'Pending', 1: 'Active', 2: 'Ended' };
+const statusVariant = { 0: 'warning', 1: 'success', 2: 'muted' };
 
 const emptyForm = {
     movieId: '', auctionTitle: '', description: '', imageUrl: '',
@@ -79,6 +94,7 @@ export default function AdminAuctions() {
             startingPrice: a.startingPrice
         });
         setMsg(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleEdit = async e => {
@@ -117,140 +133,156 @@ export default function AdminAuctions() {
     const isEditing = editTarget !== null;
 
     return (
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '30px 20px' }}>
-            <h2>🎬 Manage Auctions</h2>
+        <PageContainer size="xl">
+            <PageHeader title="Manage Auctions" icon={Gavel} />
 
             {/* Create / Edit form */}
-            <div className="card mb-4">
-                <div className="card-header fw-bold d-flex justify-content-between align-items-center">
-                    <span>{isEditing ? `✏️ Edit: ${editTarget.title}` : 'Create New Auction'}</span>
+            <Card className={isEditing ? "mb-8 border-primary/50" : "mb-8"}>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        {isEditing ? <><Pencil className="size-4 text-primary" />Edit: {editTarget.title}</> : <><Plus className="size-4 text-primary" />Create New Auction</>}
+                    </CardTitle>
                     {isEditing && (
-                        <button className="btn btn-sm btn-outline-secondary"
-                            onClick={() => { setEditTarget(null); setForm(emptyForm); setMsg(null); }}>
-                            ✕ Cancel edit
-                        </button>
+                        <CardAction>
+                            <Button variant="outline" size="sm"
+                                onClick={() => { setEditTarget(null); setForm(emptyForm); setMsg(null); }}>
+                                <X /> Cancel edit
+                            </Button>
+                        </CardAction>
                     )}
-                </div>
-                <div className="card-body">
+                </CardHeader>
+                <CardContent>
                     <form onSubmit={isEditing ? handleEdit : handleCreate}>
-                        <div className="row g-3">
-                            <div className="col-md-6">
-                                <label className="form-label">Movie (optional)</label>
-                                <select className="form-select" name="movieId" value={form.movieId} onChange={handleChange}>
+                        <div className="grid gap-5 md:grid-cols-[1fr_1fr_140px]">
+                            <div className="space-y-2">
+                                <Label htmlFor="auction-movie">Movie (optional)</Label>
+                                <NativeSelect id="auction-movie" name="movieId" value={form.movieId} onChange={handleChange}>
                                     <option value="">— Standalone item —</option>
                                     {movies.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-                                </select>
+                                </NativeSelect>
                             </div>
-                            <div className="col-md-6">
-                                <label className="form-label">Auction Title</label>
-                                <input className="form-control" name="auctionTitle" value={form.auctionTitle}
+                            <div className="space-y-2">
+                                <Label htmlFor="auction-title">Auction Title</Label>
+                                <Input id="auction-title" name="auctionTitle" value={form.auctionTitle}
                                     onChange={handleChange} placeholder="e.g. The One Ring — Original Prop" />
                             </div>
-                            <div className="col-12">
-                                <label className="form-label">Description</label>
-                                <textarea className="form-control" name="description" value={form.description}
+                            <div className="row-span-3 hidden md:block">
+                                <Label className="mb-2">Preview</Label>
+                                <div className="aspect-[2/3] overflow-hidden rounded-lg border bg-muted">
+                                    {form.imageUrl && <img src={form.imageUrl} alt="preview" className="size-full object-cover" />}
+                                </div>
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="auction-description">Description</Label>
+                                <Textarea id="auction-description" name="description" value={form.description}
                                     onChange={handleChange} rows={2} />
                             </div>
-                            <div className="col-12">
-                                <label className="form-label">Image URL</label>
-                                <input className="form-control" name="imageUrl" value={form.imageUrl}
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="auction-image">Image URL</Label>
+                                <Input id="auction-image" name="imageUrl" value={form.imageUrl}
                                     onChange={handleChange} placeholder="https://..." />
-                                {form.imageUrl && (
-                                    <img src={form.imageUrl} alt="preview"
-                                        style={{ height: 80, marginTop: 8, borderRadius: 6, objectFit: 'cover' }} />
-                                )}
                             </div>
-                            <div className="col-md-6">
-                                <label className="form-label">Starts At</label>
-                                <input type="datetime-local" className="form-control" name="startsAt"
+                            <div className="space-y-2">
+                                <Label htmlFor="auction-starts">Starts At</Label>
+                                <Input id="auction-starts" type="datetime-local" name="startsAt"
                                     value={form.startsAt} onChange={handleChange} required />
                             </div>
-                            <div className="col-md-6">
-                                <label className="form-label">Ends At</label>
-                                <input type="datetime-local" className="form-control" name="endsAt"
+                            <div className="space-y-2">
+                                <Label htmlFor="auction-ends">Ends At</Label>
+                                <Input id="auction-ends" type="datetime-local" name="endsAt"
                                     value={form.endsAt} onChange={handleChange} required />
                             </div>
-                            <div className="col-md-4">
-                                <label className="form-label">
+                            <div className="space-y-2">
+                                <Label htmlFor="auction-price">
                                     Starting Price (Ft)
-                                    {isEditing && editTarget.status !== 0 && (
-                                        <span className="text-muted ms-1" style={{ fontSize: 11 }}>(locked — auction active)</span>
-                                    )}
-                                </label>
-                                <input type="number" className="form-control" name="startingPrice"
+                                </Label>
+                                <Input id="auction-price" type="number" name="startingPrice"
                                     value={form.startingPrice} onChange={handleChange} min={1} required
                                     disabled={isEditing && editTarget.status !== 0} />
+                                {isEditing && editTarget.status !== 0 && (
+                                    <p className="text-xs text-muted-foreground">(locked — auction active)</p>
+                                )}
                             </div>
                         </div>
 
                         {msg && (
-                            <div className={`alert mt-3 ${msg.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
-                                {msg.text}
-                            </div>
+                            <Alert variant={msg.type === 'success' ? 'success' : 'destructive'} className="mt-5">
+                                {msg.type === 'success' ? <CheckCircle2 /> : <AlertCircle />}
+                                <AlertDescription>{msg.text}</AlertDescription>
+                            </Alert>
                         )}
 
-                        <button type="submit" className={`btn mt-3 ${isEditing ? 'btn-warning' : 'btn-primary'}`}
-                            disabled={saving}>
-                            {saving ? 'Saving…' : isEditing ? '💾 Save Changes' : '+ Create Auction'}
-                        </button>
+                        <Button type="submit" className="mt-5" disabled={saving}>
+                            {saving ? <><Spinner />Saving…</> : isEditing ? <><Save />Save Changes</> : <><Plus />Create Auction</>}
+                        </Button>
                     </form>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Auctions table */}
-            <table className="table table-hover">
-                <thead className="table-dark">
-                    <tr>
-                        <th>ID</th><th>Image</th><th>Title</th><th>Status</th>
-                        <th>Current Bid</th><th>Ends At</th><th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {auctions.map(a => (
-                        <tr key={a.id}>
-                            <td>{a.id}</td>
-                            <td>
-                                {a.imageUrl && (
-                                    <img src={a.imageUrl} alt="" style={{ height: 40, width: 60, objectFit: 'cover', borderRadius: 4 }} />
-                                )}
-                            </td>
-                            <td>{a.title}</td>
-                            <td>
-                                <span className={`badge bg-${a.status === 1 ? 'success' : a.status === 0 ? 'warning text-dark' : 'secondary'}`}>
-                                    {statusLabel[a.status]}
-                                </span>
-                            </td>
-                            <td>{a.currentPrice?.toLocaleString()} Ft</td>
-                            <td style={{ fontSize: 12 }}>{new Date(a.endsAt).toLocaleString()}</td>
-                            <td>
-                                <div className="d-flex gap-1">
-                                    <Link to={`/auctions/${a.id}`} className="btn btn-sm btn-outline-primary">View</Link>
-                                    <button className="btn btn-sm btn-outline-warning" onClick={() => openEdit(a)}>Edit</button>
-                                    <button className="btn btn-sm btn-outline-danger" onClick={() => setDeleteId(a.id)}>Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <Card className="py-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                            <TableHead className="w-14">ID</TableHead>
+                            <TableHead className="w-20">Image</TableHead>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Current Bid</TableHead>
+                            <TableHead>Ends At</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {auctions.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No auctions yet.</TableCell>
+                            </TableRow>
+                        )}
+                        {auctions.map(a => (
+                            <TableRow key={a.id}>
+                                <TableCell className="text-muted-foreground">{a.id}</TableCell>
+                                <TableCell>
+                                    {a.imageUrl && (
+                                        <img src={a.imageUrl} alt="" className="h-10 w-16 rounded object-cover ring-1 ring-border" />
+                                    )}
+                                </TableCell>
+                                <TableCell className="font-medium">{a.title}</TableCell>
+                                <TableCell>
+                                    <Badge variant={statusVariant[a.status]}>{statusLabel[a.status]}</Badge>
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap">{formatPrice(a.currentPrice)}</TableCell>
+                                <TableCell className="text-xs whitespace-nowrap text-muted-foreground">{new Date(a.endsAt).toLocaleString()}</TableCell>
+                                <TableCell>
+                                    <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <Link to={`/auctions/${a.id}`}><Eye />View</Link>
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => openEdit(a)}><Pencil />Edit</Button>
+                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(a.id)}>
+                                            <Trash2 />Delete
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </Card>
 
             {/* Delete confirm modal */}
-            {deleteId !== null && (
-                <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-sm modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-body text-center py-4">
-                                <p className="fw-bold">Delete this auction?</p>
-                                <p className="text-muted" style={{ fontSize: 13 }}>This cannot be undone.</p>
-                                <div className="d-flex gap-2 justify-content-center">
-                                    <button className="btn btn-danger" onClick={handleDelete}>Delete</button>
-                                    <button className="btn btn-secondary" onClick={() => setDeleteId(null)}>Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+            <Dialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Delete this auction?</DialogTitle>
+                        <DialogDescription>This cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+                        <Button variant="destructive" onClick={handleDelete}><Trash2 />Delete</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </PageContainer>
     );
 }

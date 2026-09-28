@@ -7,8 +7,10 @@ using MovieShop.Server.DTOs.TMDB;
 using MovieShop.Server.Models;
 using MovieShop.Server.Services;
 using MovieShop.Server.Services.Interfaces;
+using MovieShop.Server.Services.Interfaces.TMDB;
 using System.Security.Claims;
 using System.Text.Json;
+using Hangfire;
 
 namespace MovieShop.Server.Controllers
 {
@@ -23,6 +25,7 @@ namespace MovieShop.Server.Controllers
         private readonly IStreamingService _streamingService;
         private readonly IBlobStorageService _blobStorage;
         private readonly AppDbContext _context;
+        private readonly ITmdbService _tmdbService;
 
         public MovieController(
             IMovieService movieService,
@@ -31,7 +34,8 @@ namespace MovieShop.Server.Controllers
             IHttpClientFactory httpClientFactory,
             IStreamingService streamingService,
             IBlobStorageService blobStorage,
-            AppDbContext context)
+            AppDbContext context,
+            ITmdbService tmdbService)
         {
             _movieService = movieService;
             _orderService = orderService;
@@ -40,6 +44,27 @@ namespace MovieShop.Server.Controllers
             _streamingService = streamingService;
             _blobStorage = blobStorage;
             _context = context;
+            _tmdbService = tmdbService;
+        }
+
+        /// <summary>
+        /// Bővített TMDB-adatok (háttérképek, galéria, szereplők, rendező) a filmadatlaphoz.
+        /// Nyilvános végpont: a képek és a stáb nem vásárláshoz kötött tartalom.
+        /// </summary>
+        [HttpGet("{id}/tmdb")]
+        public async Task<ActionResult<TmdbMovieExtrasDto>> GetMovieTmdbExtras(int id)
+        {
+            var movie = await _movieService.GetMovieByIdAsync(id);
+            if (movie == null)
+                return NotFound(new { message = "Movie not found." });
+
+            if (movie.TmdbInfo == null)
+                return NotFound(new { message = "No TMDB data available for this movie." });
+
+            var extras = await _tmdbService.GetMovieExtrasAsync(movie.TmdbInfo.TmdbId);
+            return extras == null
+                ? NotFound(new { message = "No TMDB data available for this movie." })
+                : Ok(extras);
         }
 
         [HttpGet]
@@ -114,6 +139,10 @@ namespace MovieShop.Server.Controllers
 
             if (!result)
                 return BadRequest(new { message = "Failed to add movie" });
+
+            // "New movie" push notification to every subscribed device — as a Hangfire background job,
+            // so the admin request does not wait for delivery
+            BackgroundJob.Enqueue<IPushNotificationService>(x => x.NotifyNewMovieAsync(movieDto.Id));
 
             return CreatedAtAction(nameof(GetMovie), new { id = movieDto.Id }, movieDto);
         }

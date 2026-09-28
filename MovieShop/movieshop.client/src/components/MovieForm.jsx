@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { AlertCircle, ArrowLeft, Film, ImageOff, Save } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext"
 
 import API_BASE_URL from "../config/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LoadingState, Spinner } from "@/components/ui/spinner";
+import { PageContainer, PageHeader } from "@/components/ui/page";
 
 const MovieForm = () => {
     const { id } = useParams();
@@ -19,7 +28,7 @@ const MovieForm = () => {
         categories: []
     });
 
-    const [allCategories, setAllCategories] = useState([]);
+    const [, setAllCategories] = useState([]);
     const [loading, setLoading] = useState(isEditMode);
     const [error, setError] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -127,7 +136,7 @@ const MovieForm = () => {
                     if (errorData.message) {
                         errorMsg = errorData.message;
                     }
-                } catch (e) {
+                } catch {
                     // If we can't parse JSON, just use the default error message
                 }
                 throw new Error(errorMsg);
@@ -143,120 +152,123 @@ const MovieForm = () => {
     };
 
     if (loading) {
-        return <div className="container mt-4"><div className="spinner-border" role="status"></div> Loading movie data...</div>;
+        return <LoadingState label="Loading movie data..." />;
     }
 
     return (
-        <div className="container mt-4">
-            <h1>{isEditMode ? 'Edit Movie' : 'Add New Movie'}</h1>
+        <PageContainer size="lg" className="max-w-5xl">
+            <PageHeader
+                title={isEditMode ? 'Edit Movie' : 'Add New Movie'}
+                icon={Film}
+                description={isEditMode ? formData.title : 'Categories and video can be added after saving.'}
+            >
+                <Button variant="outline" onClick={() => navigate('/admin/movies')}>
+                    <ArrowLeft /> Back to Movies
+                </Button>
+            </PageHeader>
 
-            {error && <div className="alert alert-danger">{error}</div>}
+            {error && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertCircle />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
 
-            <form onSubmit={handleSubmit} className="mt-4">
-                <div className="mb-3">
-                    <label htmlFor="title" className="form-label">Title *</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="title"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleInputChange}
-                        required
-                    />
-                </div>
+            <form onSubmit={handleSubmit}>
+                <div className="grid items-start gap-6 lg:grid-cols-[1fr_260px]">
+                    <Card>
+                        <CardContent className="space-y-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="title">Title *</Label>
+                                <Input
+                                    type="text"
+                                    id="title"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
 
-                <div className="mb-3">
-                    <label htmlFor="description" className="form-label">Description *</label>
-                    <textarea
-                        className="form-control"
-                        id="description"
-                        name="description"
-                        rows="4"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        required
-                    ></textarea>
-                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description *</Label>
+                                <Textarea
+                                    id="description"
+                                    name="description"
+                                    rows={5}
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
 
-                <div className="row mb-3">
-                    <div className="col-md-6">
-                        <label htmlFor="price" className="form-label">Price (in USD) *</label>
-                        <input
-                            type="number"
-                            className="form-control"
-                            id="price"
-                            name="price"
-                            value={formData.price}
-                            onChange={handleInputChange}
-                            min="0"
-                            required
-                        />
-                    </div>
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="price">Price (Ft) *</Label>
+                                    <Input
+                                        type="number"
+                                        id="price"
+                                        name="price"
+                                        value={formData.price}
+                                        onChange={handleInputChange}
+                                        min="0"
+                                        required
+                                    />
+                                </div>
 
-                    <div className="col-md-6">
-                        <label htmlFor="discountedPrice" className="form-label">Discounted Price (optional)</label>
-                        <input
-                            type="number"
-                            className="form-control"
-                            id="discountedPrice"
-                            name="discountedPrice"
-                            value={formData.discountedPrice || ""}
-                            onChange={handleInputChange}
-                            min="0"
-                        />
-                    </div>
-                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="discountedPrice">Discounted Price (optional)</Label>
+                                    <Input
+                                        type="number"
+                                        id="discountedPrice"
+                                        name="discountedPrice"
+                                        value={formData.discountedPrice || ""}
+                                        onChange={handleInputChange}
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
 
-                <div className="mb-3">
-                    <label htmlFor="imageUrl" className="form-label">Image URL *</label>
-                    <input
-                        type="url"
-                        className="form-control"
-                        id="imageUrl"
-                        name="imageUrl"
-                        value={formData.imageUrl}
-                        onChange={handleInputChange}
-                        required
-                    />
-                    {formData.imageUrl && (
-                        <div className="mt-2">
-                            <p>Image Preview:</p>
-                            <img
-                                src={formData.imageUrl}
-                                alt="Movie preview"
-                                style={{ maxHeight: '200px' }}
-                                className="img-thumbnail"
-                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="imageUrl">Image URL *</Label>
+                                <Input
+                                    type="url"
+                                    id="imageUrl"
+                                    name="imageUrl"
+                                    value={formData.imageUrl}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Image Preview */}
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium">Image Preview</p>
+                        <div className="aspect-[2/3] overflow-hidden rounded-xl border bg-muted">
+                            {formData.imageUrl ? (
+                                <img src={formData.imageUrl} alt="Movie preview" className="size-full object-cover" />
+                            ) : (
+                                <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                                    <ImageOff className="size-8" />
+                                    <span className="text-xs">No image URL</span>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                <div className="d-flex justify-content-between mt-4">
-                    <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => navigate('/admin/movies')}
-                    >
+                <div className="mt-6 flex justify-between gap-3">
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/movies')}>
                         Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={submitting}
-                    >
-                        {submitting ? (
-                            <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                Saving...
-                            </>
-                        ) : (
-                            'Save Movie'
-                        )}
-                    </button>
+                    </Button>
+                    <Button type="submit" disabled={submitting}>
+                        {submitting ? <><Spinner />Saving...</> : <><Save />Save Movie</>}
+                    </Button>
                 </div>
             </form>
-        </div>
+        </PageContainer>
     );
 };
 

@@ -1,5 +1,8 @@
-import './App.css';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import { Toaster } from './components/ui/sonner';
+import PwaUpdater from './components/pwa/PwaUpdater';
+import OfflineBanner from './components/pwa/OfflineBanner';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Home from './pages/Home';
@@ -40,9 +43,10 @@ function App() {
     return (
         <Router>
             <AuthProvider>
-                <div className="app-container">
+                <div className="flex min-h-screen flex-col">
                     <Navbar />
-                    <div className="main-content">
+                    <OfflineBanner />
+                    <main className="flex flex-1 flex-col">
                         <Routes>
                             {/* Public routes */}
                             <Route path="/" element={<Home />} />
@@ -239,8 +243,11 @@ function App() {
                             {/* Catch all route for 404 */}
                             <Route path="*" element={<NotFound />} />
                         </Routes>
-                    </div>
+                    </main>
+                    <Footer />
                     <Chatbot />
+                    <Toaster position="top-center" richColors closeButton />
+                    <PwaUpdater />
                 </div>
             </AuthProvider>
         </Router>

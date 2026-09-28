@@ -1,7 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { AlertCircle, ArrowLeft, Ban, MapPin, ReceiptText, UserRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../services/orderService';
+import OrderStatusBadge from '../components/OrderStatusBadge';
+import { ORDER_STATUSES } from './AdminOrders';
+import { formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LoadingState, Spinner } from '@/components/ui/spinner';
+import { PageContainer, PageHeader } from '@/components/ui/page';
+
+const InfoRow = ({ label, children }) => (
+    <div className="flex justify-between gap-4 py-1.5 text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="text-right font-medium">{children}</span>
+    </div>
+);
 
 const AdminOrderDetails = () => {
     const { id } = useParams();
@@ -32,15 +51,19 @@ const AdminOrderDetails = () => {
         fetchOrderDetails();
     }, [id, token]);
 
-    const handleStatusChange = async () => {
+    // statusOverride: a "Cancel Order" gomb közvetlenül adja át az új állapotot,
+    // mert a setNewStatus még nem frissül ugyanabban a kattintásban
+    const handleStatusChange = async (statusOverride) => {
+        const status = typeof statusOverride === 'string' ? statusOverride : newStatus;
         try {
             setUpdateLoading(true);
-            await orderService.updateOrderStatus(id, newStatus, token);
+            await orderService.updateOrderStatus(id, status, token);
             // Update the order object
-            setOrder({ ...order, status: newStatus });
-            alert('Order status updated successfully!');
+            setOrder({ ...order, status });
+            setNewStatus(status);
+            toast.success('Order status updated successfully!');
         } catch (err) {
-            alert('Failed to update order status. Please try again.');
+            toast.error('Failed to update order status. Please try again.');
             console.error(err);
         } finally {
             setUpdateLoading(false);
@@ -52,174 +75,154 @@ const AdminOrderDetails = () => {
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     };
 
-    if (loading) return <div className="p-4">Loading order details...</div>;
-    if (error) return <div className="p-4 text-red-500">{error}</div>;
-    if (!order) return <div className="p-4 text-red-500">Order not found</div>;
+    if (loading) return <LoadingState label="Loading order details..." />;
+    if (error || !order) {
+        return (
+            <PageContainer size="md">
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription>{error || 'Order not found'}</AlertDescription>
+                </Alert>
+            </PageContainer>
+        );
+    }
+
+    const address = order.billingAddress;
 
     return (
-        <div className="p-4">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Order #{order.id} Details</h1>
-                <Link to="/admin/orders" className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">
-                    Back to Orders
-                </Link>
+        <PageContainer size="lg" className="max-w-5xl">
+            <PageHeader title={`Order #${order.id} Details`} icon={ReceiptText}>
+                <Button variant="outline" asChild>
+                    <Link to="/admin/orders"><ArrowLeft />Back to Orders</Link>
+                </Button>
+            </PageHeader>
+
+            <div className="grid gap-6 md:grid-cols-3">
+                <Card className="gap-3">
+                    <CardHeader>
+                        <CardTitle className="text-sm text-muted-foreground">Order Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="divide-y">
+                        <InfoRow label="Order ID">#{order.id}</InfoRow>
+                        <InfoRow label="Date">{formatDate(order.orderDate)}</InfoRow>
+                        <InfoRow label="Total">{formatPrice(order.totalPrice)}</InfoRow>
+                    </CardContent>
+                </Card>
+
+                <Card className="gap-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground"><UserRound className="size-4" />Customer Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="divide-y">
+                        <InfoRow label="Name">{order.userName}</InfoRow>
+                        <InfoRow label="Email"><span className="break-all">{order.userEmail}</span></InfoRow>
+                        <InfoRow label="User ID">{order.userId}</InfoRow>
+                    </CardContent>
+                </Card>
+
+                <Card className="gap-3">
+                    <CardHeader>
+                        <CardTitle className="text-sm text-muted-foreground">Order Status</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <OrderStatusBadge status={order.status} className="px-2.5 py-1 text-sm" />
+                        <div className="flex gap-2">
+                            <NativeSelect
+                                value={newStatus}
+                                onChange={(e) => setNewStatus(e.target.value)}
+                                disabled={updateLoading}
+                                aria-label="New status"
+                            >
+                                {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                            </NativeSelect>
+                            <Button
+                                onClick={() => handleStatusChange()}
+                                disabled={updateLoading || newStatus === order.status}
+                            >
+                                {updateLoading ? <><Spinner />Updating...</> : 'Update'}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Order Summary Card */}
-            <div className="bg-white p-6 rounded-lg shadow mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <h2 className="text-gray-500 font-medium text-sm mb-2">Order Information</h2>
-                        <div className="text-sm">
-                            <p><span className="font-medium">Order ID:</span> #{order.id}</p>
-                            <p><span className="font-medium">Date:</span> {formatDate(order.orderDate)}</p>
-                            <p><span className="font-medium">Total:</span> {order.totalPrice} Ft</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h2 className="text-gray-500 font-medium text-sm mb-2">Customer Information</h2>
-                        <div className="text-sm">
-                            <p><span className="font-medium">Name:</span> {order.userName}</p>
-                            <p><span className="font-medium">Email:</span> {order.userEmail}</p>
-                            <p><span className="font-medium">User ID:</span> {order.userId}</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h2 className="text-gray-500 font-medium text-sm mb-2">Order Status</h2>
-                        <div className="flex items-center space-x-4">
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                        order.status === 'Failed' ? 'bg-red-100 text-red-800' :
-                                            order.status === 'Cancelled' ? 'bg-gray-100 text-gray-800' :
-                                                order.status === 'Refunded' ? 'bg-blue-100 text-blue-800' :
-                                                    'bg-gray-100 text-gray-800'}`}>
-                                {order.status}
-                            </span>
-                        </div>
-
-                        <div className="mt-4">
-                            <div className="flex items-center space-x-2">
-                                <select
-                                    value={newStatus}
-                                    onChange={(e) => setNewStatus(e.target.value)}
-                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                    disabled={updateLoading}
-                                >
-                                    <option value="Pending">Pending</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="Failed">Failed</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                    <option value="Refunded">Refunded</option>
-                                </select>
-                                <button
-                                    onClick={handleStatusChange}
-                                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-                                    disabled={updateLoading || newStatus === order.status}
-                                >
-                                    {updateLoading ? 'Updating...' : 'Update'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Addresses */}
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
-                {/* Billing Address */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-lg font-semibold mb-4">Billing Address</h2>
-                    <div className="text-sm">
-                        <p>{order.billingAddress.fullName}</p>
-                        <p>{order.billingAddress.street}</p>
-                        <p>{order.billingAddress.city}, {order.billingAddress.state} {order.billingAddress.zipCode}</p>
-                        <p>{order.billingAddress.country}</p>
-                        <p className="mt-2">{order.billingAddress.phone}</p>
-                    </div>
-                </div>
-            </div>
+            {/* Billing Address */}
+            {address && (
+                <Card className="mt-6 gap-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><MapPin className="size-4 text-primary" />Billing Address</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-0.5 text-sm">
+                        {address.fullName && <p className="font-medium">{address.fullName}</p>}
+                        <p>{address.street}</p>
+                        <p>{address.city}{address.state ? `, ${address.state}` : ''} {address.zip ?? address.zipCode}</p>
+                        {address.country && <p>{address.country}</p>}
+                        {address.phone && <p className="mt-2 text-muted-foreground">{address.phone}</p>}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Order Items */}
-            <div className="bg-white p-6 rounded-lg shadow mb-6">
-                <h2 className="text-lg font-semibold mb-4">Order Items</h2>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Movie
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Quantity
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Price
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {order.movies.map((movie) => (
-                                <tr key={movie.movieId}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">{movie.title}</div>
-                                        <div className="text-sm text-gray-500">ID: {movie.movieId}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {movie.quantity}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {movie.priceAtOrder} Ft
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {movie.priceAtOrder * movie.quantity} Ft
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className="bg-gray-50">
-                                <td colSpan="3" className="px-6 py-4 text-right text-sm font-medium">
-                                    Total
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    {order.totalPrice} Ft
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+            <Card className="mt-6 gap-3">
+                <CardHeader>
+                    <CardTitle>Order Items</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table containerClassName="rounded-lg border">
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead>Movie</TableHead>
+                                <TableHead>Quantity</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {order.movies.map((movie) => {
+                                const quantity = movie.quantity ?? 1;
+                                return (
+                                    <TableRow key={movie.movieId}>
+                                        <TableCell>
+                                            <div className="font-medium">{movie.title}</div>
+                                            <div className="text-xs text-muted-foreground">ID: {movie.movieId}</div>
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">{quantity}</TableCell>
+                                        <TableCell className="text-muted-foreground">{formatPrice(movie.priceAtOrder)}</TableCell>
+                                        <TableCell className="text-right">{formatPrice(movie.priceAtOrder * quantity)}</TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                        <TableFooter>
+                            <TableRow className="hover:bg-transparent">
+                                <TableCell colSpan={3} className="text-right">Total</TableCell>
+                                <TableCell className="text-right font-bold">{formatPrice(order.totalPrice)}</TableCell>
+                            </TableRow>
+                        </TableFooter>
+                    </Table>
+                </CardContent>
+            </Card>
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-4">
-                <button
-                    onClick={() => navigate('/admin/orders')}
-                    className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded"
-                >
+            <div className="mt-6 flex justify-end gap-3">
+                <Button variant="outline" onClick={() => navigate('/admin/orders')}>
                     Back to Orders
-                </button>
+                </Button>
                 {order.status !== 'Cancelled' && (
-                    <button
+                    <Button
+                        variant="destructive"
                         onClick={() => {
                             if (window.confirm('Are you sure you want to cancel this order?')) {
-                                setNewStatus('Cancelled');
-                                handleStatusChange();
+                                handleStatusChange('Cancelled');
                             }
                         }}
-                        className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded"
                         disabled={updateLoading}
                     >
-                        Cancel Order
-                    </button>
+                        <Ban /> Cancel Order
+                    </Button>
                 )}
             </div>
-        </div>
+        </PageContainer>
     )
 };
 

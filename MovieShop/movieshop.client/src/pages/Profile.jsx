@@ -1,7 +1,23 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { AlertCircle, ChevronRight, KeyRound, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../config/api";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LoadingState } from "@/components/ui/spinner";
+import { PageContainer } from "@/components/ui/page";
+import NotificationSettings from "@/components/pwa/NotificationSettings";
+
+const FormMessage = ({ message, success }) =>
+    message ? (
+        <p className={cn("text-sm", success ? "text-success" : "text-destructive")}>{message}</p>
+    ) : null;
 
 const Profile = () => {
     const { user, token, logout } = useAuth();
@@ -66,7 +82,7 @@ const Profile = () => {
             });
 
             if (res.ok) {
-                setEmailMessage("Email updtated!");
+                setEmailMessage("Email updated!");
                 setProfile(prev => ({ ...prev, email: newEmail }));
                 setNewEmail("");
             } else {
@@ -110,71 +126,124 @@ const Profile = () => {
         }
     };
 
-    if (isLoading) return <p>Bet�lt�s...</p>;
-    if (error) return <p className="error-message">{error}</p>;
-    if (!profile) return <p>Unsuccessful to load the profile</p>;
+    if (isLoading) return <LoadingState label="Loading profile..." />;
+    if (error || !profile) {
+        return (
+            <PageContainer size="md">
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription>{error || "Unsuccessful to load the profile"}</AlertDescription>
+                </Alert>
+            </PageContainer>
+        );
+    }
+
+    const displayName = profile.name || profile.userName || user?.name;
 
     return (
-        <div style={{ maxWidth: "500px", margin: "2rem auto", padding: "1rem", border: "1px solid #ccc", borderRadius: "8px" }}>
-            <h2>Profile</h2>
-            <p><strong>Email:</strong> {profile.email}</p>
-
-            <hr />
-
-            <h3>Change email</h3>
-            <form onSubmit={handleEmailUpdate}>
-                <div className="form-group">
-                    <input
-                        type="email"
-                        placeholder="New email"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        required
-                        className="form-control"
-                    />
-                    <button type="submit" className="btn btn-primary">Update</button>
+        <PageContainer size="md" className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center gap-4">
+                <Avatar className="size-16 ring-2 ring-primary/40">
+                    <AvatarFallback className="bg-primary/15 text-xl text-primary">
+                        {(displayName || profile.email || "U").slice(0, 1).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                    <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+                    <p className="flex items-center gap-1.5 truncate text-muted-foreground">
+                        {displayName && <><UserRound className="size-4" />{displayName} · </>}
+                        <Mail className="size-4" /> {profile.email}
+                    </p>
                 </div>
-                {emailMessage && <p className={emailMessage.includes("updtated") ? "success-message" : "error-message"}>{emailMessage}</p>}
-            </form>
+            </div>
 
-            <hr />
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Mail className="size-4 text-primary" /> Change email</CardTitle>
+                        <CardDescription>Current: {profile.email}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleEmailUpdate} className="space-y-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="new-email">New email</Label>
+                                <Input
+                                    id="new-email"
+                                    type="email"
+                                    placeholder="New email"
+                                    value={newEmail}
+                                    onChange={(e) => setNewEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <Button type="submit">Update</Button>
+                            <FormMessage message={emailMessage} success={emailMessage.includes("updated")} />
+                        </form>
+                    </CardContent>
+                </Card>
 
-            <h3>Change password</h3>
-            <form onSubmit={handlePasswordChange}>
-                <div className="form-group">
-                    <input
-                        type="password"
-                        placeholder="Current password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        required
-                        className="form-control"
-                    />
-                </div>
-                <div className="form-group">
-                    <input
-                        type="password"
-                        placeholder="New password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                        minLength={8}
-                        className="form-control"
-                    />
-                </div>
-                <button type="submit" className="btn btn-primary">Change</button>
-                {passwordMessage && <p className={passwordMessage.includes("successful") ? "success-message" : "error-message"}>{passwordMessage}</p>}
-            </form>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><KeyRound className="size-4 text-primary" /> Change password</CardTitle>
+                        <CardDescription>Use at least 8 characters.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handlePasswordChange} className="space-y-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="current-password">Current password</Label>
+                                <Input
+                                    id="current-password"
+                                    type="password"
+                                    autoComplete="current-password"
+                                    placeholder="Current password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="new-password">New password</Label>
+                                <Input
+                                    id="new-password"
+                                    type="password"
+                                    autoComplete="new-password"
+                                    placeholder="New password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    required
+                                    minLength={8}
+                                />
+                            </div>
+                            <Button type="submit">Change</Button>
+                            <FormMessage message={passwordMessage} success={passwordMessage.includes("successful")} />
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
 
-            <hr />
+            <Card>
+                <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                            <ShieldCheck className="size-5" />
+                        </div>
+                        <div>
+                            <h2 className="font-semibold">Security</h2>
+                            <p className="text-sm text-muted-foreground">Protect your account with two-factor authentication.</p>
+                        </div>
+                    </div>
+                    <Button variant="outline" asChild>
+                        <Link to="/profile/2fa">
+                            Manage Two-Factor Authentication
+                            <ChevronRight />
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
 
-            <h3>Security</h3>
-            <p className="text-muted">Protect your account with two-factor authentication.</p>
-            <a href="/profile/2fa" className="btn btn-outline-primary">
-                <i className="bi bi-shield-lock me-2"></i>
-                Manage Two-Factor Authentication
-            </a>
-        </div>
+            <NotificationSettings />
+        </PageContainer>
     );
 };
 

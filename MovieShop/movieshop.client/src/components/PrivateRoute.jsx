@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { LoadingState } from "@/components/ui/spinner";
 
 const PrivateRoute = ({ children }) => {
     const { user, loading } = useAuth();
@@ -7,13 +8,7 @@ const PrivateRoute = ({ children }) => {
 
     // Show loading while checking authentication
     if (loading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        );
+        return <LoadingState />;
     }
 
     // If not logged in, redirect to login with current location as state

@@ -1,8 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+    ArrowLeft, Clock, Film, Gauge, Info, PlayCircle, RotateCcw, TriangleAlert, Users, Wifi, X, Zap,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import API_BASE_URL from '../config/api';
 import Hls from 'hls.js';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { LoadingState } from '@/components/ui/spinner';
+import { PageContainer } from '@/components/ui/page';
 
 const WatchMovie = () => {
     const { movieId } = useParams();
@@ -10,7 +20,7 @@ const WatchMovie = () => {
     const navigate = useNavigate();
     const videoRef = useRef(null);
     const hlsRef = useRef(null);
-    
+
     const [movie, setMovie] = useState(null);
     const [trailerData, setTrailerData] = useState(null);
     const [streamingData, setStreamingData] = useState(null);
@@ -203,7 +213,7 @@ const WatchMovie = () => {
             } else {
                 console.error('HLS is not supported in this browser');
             }
-        } 
+        }
         // Legacy MP4 with manual quality selection
         else if (streamingData.availableQualities) {
             const currentTime = video.currentTime;
@@ -214,11 +224,11 @@ const WatchMovie = () => {
 
             video.src = videoUrl;
             video.currentTime = currentTime;
-            
+
             if (wasPlaying) {
                 video.play().catch(err => console.log('Autoplay prevented:', err));
             }
-            
+
             console.log('Available video qualities:', Object.keys(streamingData.availableQualities));
             console.log('Playing video');
 
@@ -279,261 +289,237 @@ const WatchMovie = () => {
     }, [selectedHlsLevel, hlsQualityLevels]);
 
     if (loading) {
-        return (
-            <div className="container mt-5">
-                <div className="text-center">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <p className="mt-3">Loading movie...</p>
-                </div>
-            </div>
-        );
+        return <LoadingState label="Loading movie..." />;
     }
 
     if (error) {
         return (
-            <div className="container mt-5">
-                <div className="alert alert-danger" role="alert">
-                    <h4 className="alert-heading">Unable to play movie</h4>
-                    <p>{error}</p>
-                    <hr />
-                    <div className="d-flex gap-2">
-                        <Link to="/my-movies" className="btn btn-primary">
-                            Back to My Movies
-                        </Link>
-                        <Link to={`/movie/${movieId}`} className="btn btn-outline-primary">
-                            View Movie Details
-                        </Link>
-                    </div>
-                </div>
-            </div>
+            <PageContainer size="md">
+                <Alert variant="destructive">
+                    <TriangleAlert />
+                    <AlertTitle>Unable to play movie</AlertTitle>
+                    <AlertDescription>
+                        <p>{error}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            <Button asChild size="sm">
+                                <Link to="/my-movies">Back to My Movies</Link>
+                            </Button>
+                            <Button asChild size="sm" variant="outline" className="text-foreground">
+                                <Link to={`/movies/${movieId}`}>View Movie Details</Link>
+                            </Button>
+                        </div>
+                    </AlertDescription>
+                </Alert>
+            </PageContainer>
         );
     }
 
     return (
-        <div className="bg-dark text-white" style={{ minHeight: '100vh' }}>
-            {/* Back button - fixed at top */}
-            <div className="container-fluid py-3 border-bottom border-secondary">
-                <div className="container">
-                    <button 
-                        onClick={() => navigate('/my-movies')} 
-                        className="btn btn-outline-light btn-sm"
-                    >
-                        <i className="bi bi-arrow-left me-2"></i>
+        // A lejátszó mindig sötét, a választott témától függetlenül
+        <div className="dark flex-1 bg-background text-foreground">
+            {/* Back button */}
+            <div className="border-b">
+                <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/my-movies')}>
+                        <ArrowLeft />
                         Back to My Movies
-                    </button>
+                    </Button>
+                    {movie && <span className="hidden truncate text-sm text-muted-foreground sm:inline">/ {movie.title}</span>}
                 </div>
             </div>
 
             {/* Main content */}
-            <div className="container py-4">
+            <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_340px] lg:px-8">
                 {/* Video player section */}
-                <div className="row g-4">
-                    <div className="col-lg-8">
-                        {streamingData && streamingData.url ? (
-                            <>
-                                {/* Streaming info badge */}
-                                <div className="d-flex align-items-center mb-3 flex-wrap gap-2">
-                                    <div className="badge bg-success px-3 py-2">
-                                        <i className="bi bi-play-circle me-2"></i>
-                                        Full Movie Streaming
-                                    </div>
-                                    {streamingData.isHls && (
-                                        <div className="badge bg-primary px-3 py-2">
-                                            <i className="bi bi-lightning-charge me-1"></i>
-                                            Adaptive Streaming (HLS)
-                                        </div>
-                                    )}
-                                    <div className="badge bg-secondary px-3 py-2">
-                                        <i className="bi bi-clock me-1"></i>
-                                        Expires: {new Date(streamingData.expiresAt).toLocaleTimeString()}
-                                    </div>
-                                </div>
-                                
-                                {/* Resume toast */}
-                                {showResumeToast && (
-                                    <div className="alert alert-info d-flex align-items-center justify-content-between py-2 mb-3">
-                                        <span>
-                                            <i className="bi bi-play-circle me-2"></i>
-                                            Continuing from {new Date(savedProgress * 1000).toISOString().substring(11, 19)}
-                                        </span>
-                                        <button
-                                            className="btn btn-sm btn-outline-secondary ms-3"
+                <div className="min-w-0 space-y-3">
+                    {streamingData && streamingData.url ? (
+                        <>
+                            {/* Streaming info badges */}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant="success" className="px-2.5 py-1">
+                                    <PlayCircle /> Full Movie Streaming
+                                </Badge>
+                                {streamingData.isHls && (
+                                    <Badge variant="warning" className="px-2.5 py-1">
+                                        <Zap /> Adaptive Streaming (HLS)
+                                    </Badge>
+                                )}
+                                <Badge variant="muted" className="px-2.5 py-1">
+                                    <Clock /> Expires: {new Date(streamingData.expiresAt).toLocaleTimeString()}
+                                </Badge>
+                            </div>
+
+                            {/* Resume toast */}
+                            {showResumeToast && (
+                                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+                                    <span className="flex items-center gap-2">
+                                        <PlayCircle className="size-4 text-primary" />
+                                        Continuing from <strong className="font-mono">{new Date(savedProgress * 1000).toISOString().substring(11, 19)}</strong>
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
                                             onClick={() => {
                                                 if (videoRef.current) videoRef.current.currentTime = 0;
                                                 setShowResumeToast(false);
                                             }}
                                         >
-                                            Start from beginning
-                                        </button>
+                                            <RotateCcw /> Start from beginning
+                                        </Button>
+                                        <Button size="icon-sm" variant="ghost" aria-label="Close" onClick={() => setShowResumeToast(false)}>
+                                            <X />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Video Player */}
+                            <div className="aspect-video w-full overflow-hidden rounded-xl bg-black shadow-2xl ring-1 shadow-black/60 ring-white/10">
+                                <video ref={videoRef} controls className="size-full bg-black">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+
+                            {/* HLS Quality Selector */}
+                            {streamingData.isHls && hlsQualityLevels.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2">
+                                    <span className="flex items-center gap-1.5 text-sm font-medium">
+                                        <Gauge className="size-4 text-primary" />
+                                        Quality:
+                                    </span>
+                                    <div className="inline-flex flex-wrap rounded-md bg-muted p-0.5" role="group">
                                         <button
                                             type="button"
-                                            className="btn-close ms-2"
-                                            onClick={() => setShowResumeToast(false)}
-                                        />
-                                    </div>
-                                )}
-
-                                {/* HLS Quality Selector */}
-                                {streamingData.isHls && hlsQualityLevels.length > 0 && (
-                                    <div className="card bg-secondary text-white mb-3">
-                                        <div className="card-body py-2">
-                                            <div className="d-flex align-items-center flex-wrap gap-2">
-                                                <span className="fw-bold me-2">
-                                                    <i className="bi bi-gear me-1"></i>
-                                                    Quality:
-                                                </span>
-                                                <div className="btn-group btn-group-sm" role="group">
-                                                    <button
-                                                        type="button"
-                                                        className={`btn ${selectedHlsLevel === -1 ? 'btn-success' : 'btn-outline-light'}`}
-                                                        onClick={() => setSelectedHlsLevel(-1)}
-                                                    >
-                                                        <i className="bi bi-wifi me-1"></i>Auto
-                                                    </button>
-                                                    {hlsQualityLevels.map((level, index) => (
-                                                        <button
-                                                            key={index}
-                                                            type="button"
-                                                            className={`btn ${selectedHlsLevel === index ? 'btn-primary' : 'btn-outline-light'}`}
-                                                            onClick={() => setSelectedHlsLevel(index)}
-                                                        >
-                                                            {level.height}p
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <small className="text-light opacity-75 d-none d-md-inline">
-                                                    Auto adjusts based on your connection
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {/* Video Player with shadow */}
-                                <div className="ratio ratio-16x9 rounded overflow-hidden shadow-lg">
-                                    <video
-                                        ref={videoRef}
-                                        controls
-                                        className="bg-black"
-                                        style={{ width: '100%', height: '100%' }}
-                                    >
-                                        Your browser does not support the video tag.
-                                    </video>
-                                </div>
-                            </>
-                        ) : trailerData && trailerData.youtubeKey ? (
-                            <>
-                                <div className="alert alert-info mb-3">
-                                    <i className="bi bi-film me-2"></i>
-                                    <strong>Trailer Preview</strong> - Full movie streaming not yet available
-                                </div>
-                                <div className="ratio ratio-16x9 rounded overflow-hidden shadow-lg">
-                                    <iframe
-                                        src={`https://www.youtube.com/embed/${trailerData.youtubeKey}?autoplay=0&rel=0`}
-                                        title={trailerData.name || 'Movie Trailer'}
-                                        frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                        className="bg-black"
-                                    />
-                                </div>
-                            </>
-                        ) : (
-                            <div className="alert alert-warning">
-                                <i className="bi bi-exclamation-triangle me-2"></i>
-                                No video available for this movie.
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Movie info sidebar */}
-                    <div className="col-lg-4">
-                        {movie && (
-                            <div className="sticky-lg-top" style={{ top: '20px' }}>
-                                <div className="card bg-secondary text-white">
-                                    <div className="card-body">
-                                        <h2 className="card-title h4 mb-3">{movie.title}</h2>
-                                        
-                                        {movie.categories && movie.categories.length > 0 && (
-                                            <div className="mb-3">
-                                                <div className="d-flex flex-wrap gap-2">
-                                                    {movie.categories.map(cat => (
-                                                        <span key={cat.id} className="badge bg-primary px-3 py-2">
-                                                            {cat.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="mb-3">
-                                            <h6 className="text-light opacity-75 mb-2">
-                                                <i className="bi bi-info-circle me-2"></i>
-                                                Description
-                                            </h6>
-                                            <p className="card-text small">{movie.description}</p>
-                                        </div>
-
-                                        {trailerData && trailerData.name && (
-                                            <div className="mb-3">
-                                                <h6 className="text-light opacity-75 mb-2">
-                                                    <i className="bi bi-film me-2"></i>
-                                                    Currently Playing
-                                                </h6>
-                                                <p className="small mb-0">{trailerData.name}</p>
-                                            </div>
-                                        )}
-
-                                        <hr className="border-light opacity-25" />
-
-                                        {/* Technical info */}
-                                        <div className="small">
-                                            <h6 className="text-light opacity-75 mb-2">
-                                                <i className="bi bi-info-square me-2"></i>
-                                                Streaming Info
-                                            </h6>
-                                            {streamingData && streamingData.isHls ? (
-                                                <p className="mb-0">
-                                                    <strong>HLS Adaptive Streaming</strong><br/>
-                                                    Quality auto-adjusts (480p, 720p, 1080p) based on your connection speed.
-                                                </p>
-                                            ) : streamingData && streamingData.availableQualities ? (
-                                                <p className="mb-0">
-                                                    <strong>Multi-Quality Streaming</strong><br/>
-                                                    Available: {Object.keys(streamingData.availableQualities).join(', ')}
-                                                </p>
-                                            ) : streamingData && streamingData.url ? (
-                                                <p className="mb-0">Streaming from Azure Blob Storage</p>
-                                            ) : (
-                                                <p className="mb-0">Official trailer - Full movie available after transcoding</p>
+                                            className={cn(
+                                                "inline-flex cursor-pointer items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                                                selectedHlsLevel === -1 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                                             )}
-                                        </div>
+                                            onClick={() => setSelectedHlsLevel(-1)}
+                                        >
+                                            <Wifi className="size-3" />Auto
+                                        </button>
+                                        {hlsQualityLevels.map((level, index) => (
+                                            <button
+                                                key={index}
+                                                type="button"
+                                                className={cn(
+                                                    "cursor-pointer rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                                                    selectedHlsLevel === index ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                                onClick={() => setSelectedHlsLevel(index)}
+                                            >
+                                                {level.height}p
+                                            </button>
+                                        ))}
                                     </div>
+                                    <span className="hidden text-xs text-muted-foreground md:inline">
+                                        Auto adjusts based on your connection
+                                    </span>
+                                </div>
+                            )}
+                        </>
+                    ) : trailerData && trailerData.youtubeKey ? (
+                        <>
+                            <Alert variant="info">
+                                <Film />
+                                <AlertDescription>
+                                    <span><strong className="text-foreground">Trailer Preview</strong> - Full movie streaming not yet available</span>
+                                </AlertDescription>
+                            </Alert>
+                            <div className="aspect-video w-full overflow-hidden rounded-xl bg-black shadow-2xl ring-1 ring-white/10">
+                                <iframe
+                                    src={`https://www.youtube.com/embed/${trailerData.youtubeKey}?autoplay=0&rel=0`}
+                                    title={trailerData.name || 'Movie Trailer'}
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    className="size-full bg-black"
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <Alert variant="warning">
+                            <TriangleAlert />
+                            <AlertDescription>No video available for this movie.</AlertDescription>
+                        </Alert>
+                    )}
+                </div>
+
+                {/* Movie info sidebar */}
+                <aside>
+                    {movie && (
+                        <div className="space-y-3 lg:sticky lg:top-24">
+                            <div className="space-y-4 rounded-xl border bg-card p-5">
+                                <h1 className="font-display text-4xl leading-none tracking-wide">{movie.title}</h1>
+
+                                {movie.categories && movie.categories.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {movie.categories.map(cat => (
+                                            <Badge key={cat.id} variant="secondary">{cat.name}</Badge>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div>
+                                    <h2 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                        <Info className="size-3.5" /> Description
+                                    </h2>
+                                    <p className="text-sm leading-relaxed text-foreground/85">{movie.description}</p>
                                 </div>
 
-                                {/* Quick actions */}
-                                <div className="mt-3 d-grid gap-2">
-                                    <Link
-                                        to={`/my-movies/${movieId}/watch-party`}
-                                        className="btn btn-primary"
-                                    >
-                                        <i className="bi bi-people-fill me-2"></i>
+                                {trailerData && trailerData.name && (
+                                    <div>
+                                        <h2 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                            <Film className="size-3.5" /> Currently Playing
+                                        </h2>
+                                        <p className="text-sm">{trailerData.name}</p>
+                                    </div>
+                                )}
+
+                                <Separator />
+
+                                {/* Technical info */}
+                                <div className="text-sm">
+                                    <h2 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                        <Zap className="size-3.5" /> Streaming Info
+                                    </h2>
+                                    {streamingData && streamingData.isHls ? (
+                                        <p className="text-foreground/85">
+                                            <strong className="text-foreground">HLS Adaptive Streaming</strong><br />
+                                            Quality auto-adjusts (480p, 720p, 1080p) based on your connection speed.
+                                        </p>
+                                    ) : streamingData && streamingData.availableQualities ? (
+                                        <p className="text-foreground/85">
+                                            <strong className="text-foreground">Multi-Quality Streaming</strong><br />
+                                            Available: {Object.keys(streamingData.availableQualities).join(', ')}
+                                        </p>
+                                    ) : streamingData && streamingData.url ? (
+                                        <p className="text-foreground/85">Streaming from Azure Blob Storage</p>
+                                    ) : (
+                                        <p className="text-foreground/85">Official trailer - Full movie available after transcoding</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Quick actions */}
+                            <div className="grid gap-2">
+                                <Button asChild size="lg">
+                                    <Link to={`/my-movies/${movieId}/watch-party`}>
+                                        <Users />
                                         Watch Party
                                     </Link>
-                                    <Link
-                                        to={`/movies/${movieId}`}
-                                        className="btn btn-outline-light"
-                                    >
-                                        <i className="bi bi-info-circle me-2"></i>
+                                </Button>
+                                <Button asChild variant="outline">
+                                    <Link to={`/movies/${movieId}`}>
+                                        <Info />
                                         View Details
                                     </Link>
-                                </div>
+                                </Button>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
+                    )}
+                </aside>
             </div>
         </div>
     );

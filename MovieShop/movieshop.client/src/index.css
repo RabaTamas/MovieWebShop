@@ -1,96 +1,242 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * MovieWebShop design system
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Sötét, mozis alapértelmezés (a <html> elemen a `dark` osztály), világos móddal.
+ * A színek shadcn/ui-konvenció szerinti CSS-változók, így minden komponens
+ * automatikusan követi a témát.
+ *
+ * Kiemelőszín: borostyán/arany (reflektorfény, mozijegy). A piros szándékosan
+ * a „destructive" és az akciós ár jelzésére marad, hogy ne keveredjen a
+ * fő cselekvési színnel.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    --radius: 0.75rem;
+
+    /* ── Világos téma ─────────────────────────────────────────── */
+    --background: oklch(0.985 0.002 90);
+    --foreground: oklch(0.18 0.01 270);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.18 0.01 270);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.18 0.01 270);
+    --primary: oklch(0.72 0.16 65);
+    --primary-foreground: oklch(0.18 0.03 60);
+    --secondary: oklch(0.95 0.004 270);
+    --secondary-foreground: oklch(0.22 0.01 270);
+    --muted: oklch(0.95 0.004 270);
+    --muted-foreground: oklch(0.5 0.012 270);
+    --accent: oklch(0.94 0.02 75);
+    --accent-foreground: oklch(0.22 0.02 60);
+    --destructive: oklch(0.58 0.22 25);
+    --destructive-foreground: oklch(0.985 0 0);
+    --success: oklch(0.6 0.13 155);
+    --border: oklch(0.9 0.006 270);
+    --input: oklch(0.9 0.006 270);
+    --ring: oklch(0.72 0.16 65);
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+.dark {
+    /* ── Sötét, mozis téma (alapértelmezés) ───────────────────── */
+    --background: oklch(0.13 0.008 270);
+    --foreground: oklch(0.96 0.004 270);
+    --card: oklch(0.17 0.01 270);
+    --card-foreground: oklch(0.96 0.004 270);
+    --popover: oklch(0.17 0.01 270);
+    --popover-foreground: oklch(0.96 0.004 270);
+    --primary: oklch(0.8 0.15 75);
+    --primary-foreground: oklch(0.18 0.03 60);
+    --secondary: oklch(0.23 0.012 270);
+    --secondary-foreground: oklch(0.96 0.004 270);
+    --muted: oklch(0.22 0.01 270);
+    --muted-foreground: oklch(0.68 0.012 270);
+    --accent: oklch(0.26 0.02 70);
+    --accent-foreground: oklch(0.94 0.04 80);
+    --destructive: oklch(0.64 0.21 25);
+    --destructive-foreground: oklch(0.985 0 0);
+    --success: oklch(0.7 0.14 155);
+    --border: oklch(1 0 0 / 9%);
+    --input: oklch(1 0 0 / 13%);
+    --ring: oklch(0.8 0.15 75);
 }
 
-html, body, #root {
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+@theme inline {
+    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: "Bebas Neue", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-success: var(--success);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
 }
 
-body {
-    margin: 0;
-    min-width: 320px;
-    min-height: 100vh;
+/* ── Animációk ────────────────────────────────────────────────────────────────
+ * Tailwind utility-ként érhetők el: animate-kenburns, animate-marquee-up stb. */
+@theme {
+    --animate-kenburns: kenburns 32s ease-in-out infinite alternate;
+    --animate-marquee-up: marquee-up 70s linear infinite;
+    --animate-marquee-down: marquee-down 70s linear infinite;
+    --animate-aurora: aurora 20s ease-in-out infinite alternate;
+    --animate-flicker: flicker 5s steps(1) infinite;
+    --animate-spotlight: spotlight 10s ease-in-out infinite alternate;
+    --animate-float: float 7s ease-in-out infinite;
+
+    @keyframes kenburns {
+        from { transform: scale(1.04) translate3d(0, 0, 0); }
+        to { transform: scale(1.16) translate3d(-2.5%, -1.5%, 0); }
+    }
+    @keyframes marquee-up {
+        from { transform: translateY(0); }
+        to { transform: translateY(-50%); }
+    }
+    @keyframes marquee-down {
+        from { transform: translateY(-50%); }
+        to { transform: translateY(0); }
+    }
+    @keyframes aurora {
+        0% { transform: translate(-12%, -8%) rotate(0deg) scale(1); }
+        50% { transform: translate(10%, 6%) rotate(35deg) scale(1.15); }
+        100% { transform: translate(-4%, 12%) rotate(70deg) scale(0.95); }
+    }
+    @keyframes flicker {
+        0%, 18%, 21%, 24%, 79%, 83%, 100% { opacity: 1; }
+        19%, 23%, 81% { opacity: 0.35; }
+    }
+    @keyframes spotlight {
+        from { transform: rotate(-16deg); }
+        to { transform: rotate(14deg); }
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
 }
 
-/* Link styles */
-a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
+/* Forgó, fényes keret (élő aukciók) — @property kell a szög animálásához */
+@property --glow-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
 }
 
-    a:hover {
-        color: #535bf2;
+@keyframes glow-rotate {
+    to { --glow-angle: 360deg; }
+}
+
+@keyframes grain-shift {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-3%, 2%); }
+    50% { transform: translate(2%, -3%); }
+    75% { transform: translate(-2%, -1%); }
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
     }
 
-/* Heading styles */
-h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
-}
-
-/* Button styles */
-button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: #1a1a1a;
-    cursor: pointer;
-    transition: border-color 0.25s;
-}
-
-    button:hover {
-        border-color: #646cff;
+    html {
+        color-scheme: dark;
     }
 
-    button:focus,
-    button:focus-visible {
-        outline: 4px auto -webkit-focus-ring-color;
+    html:not(.dark) {
+        color-scheme: light;
     }
 
-/* Light theme styles */
-@media (prefers-color-scheme: light) {
-    :root {
-        color: #213547;
-        background-color: #ffffff;
-    }
-
-    a:hover {
-        color: #747bff;
-    }
-
-    button {
-        background-color: #f9f9f9;
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+        min-height: 100vh;
     }
 }
 
-/* Navbar styles */
-.navbar {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    background-color: #007bff;
-    padding: 10px 20px;
-    box-sizing: border-box;
+@layer utilities {
+    /* Vízszintesen görgethető sor (ajánlások), látható görgetősáv nélkül */
+    .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Animált filmszemcse réteg (a szülőnek relative/isolate kell) */
+    .film-grain::after {
+        content: "";
+        position: absolute;
+        inset: -50%;
+        pointer-events: none;
+        opacity: 0.07;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        animation: grain-shift 1.2s steps(4) infinite;
+        z-index: 1;
+    }
+
+    /* Forgó fénycsík a kártya szélén */
+    .glow-border::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1.5px;
+        background: conic-gradient(
+            from var(--glow-angle),
+            transparent 0 55%,
+            var(--primary) 72%,
+            oklch(0.72 0.2 35) 82%,
+            transparent 96%
+        );
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        animation: glow-rotate 4s linear infinite;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* Szélek felé elhalványuló maszk (poszterfal, vízszintes sorok) */
+    .mask-fade-y {
+        mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+    }
+
+    .mask-fade-x {
+        mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    }
+}
+
+/* Aki a rendszerében csökkentett mozgást kér, annak a folyamatos animációk kikapcsolnak */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

@@ -72,13 +72,25 @@ namespace MovieShop.Server.Services.Implementations
                 int totalPrice = cartDto.Items.Sum(i => i.PriceAtOrder);
 
                 // Create order
+                //
+                // A státuszt itt kell beállítani. Korábban a modell alapértelmezése
+                // (Pending) maradt érvényben, miközben a HasUserPurchasedMovieAsync és a
+                // GetPurchasedMovieIdsAsync a "Completed" állapotra szűr — emiatt egy
+                // kifizetett film nem jelent meg a "Saját filmjeim" oldalon, és nem is
+                // volt streamelhető, amíg admin kézzel át nem állította a rendelést.
+                //
+                // A fizetést a controller már ellenőrizte a Stripe PaymentIntent
+                // lekérdezésével, tehát ha van PaymentIntentId, a rendelés teljesített.
                 var order = new Order
                 {
                     UserId = userId,
                     OrderDate = DateTime.UtcNow,
                     TotalPrice = totalPrice,
                     BillingAddressId = billingAddress.Id,
-                    ShippingAddressId = null // No shipping for digital products
+                    ShippingAddressId = null, // No shipping for digital products
+                    Status = string.IsNullOrEmpty(dto.PaymentIntentId)
+                        ? OrderStatus.Pending.ToString()
+                        : OrderStatus.Completed.ToString()
                 };
 
                 await _context.Orders.AddAsync(order);

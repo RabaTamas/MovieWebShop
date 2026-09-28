@@ -1,7 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AlertCircle, UserPlus } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import API_BASE_URL from "../config/api";
+import AuthLayout from "../components/AuthLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Register = () => {
     const [name, setName] = useState("");
@@ -10,7 +16,7 @@ const Register = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
-    const { login } = useAuth(); // Changed from setUser to login
+    const { login } = useAuth();
 
     const validateEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -73,53 +79,40 @@ const Register = () => {
     };
 
     return (
-        <div className="container mt-5">
-            <h2>Register</h2>
-            {error && <div className="alert alert-danger">{error}</div>}
-            <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                    <label className="form-label">Name</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
+        <AuthLayout icon={UserPlus} title="Register" description="Create an account to buy and stream movies.">
+            {error && (
+                <Alert variant="destructive" className="mb-5">
+                    <AlertCircle />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="register-name">Name</Label>
+                    <Input id="register-name" type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
-                <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input
-                        type="email"
-                        className="form-control"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
+                <div className="space-y-2">
+                    <Label htmlFor="register-email">Email</Label>
+                    <Input id="register-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
-                <div className="mb-3">
-                    <label className="form-label">Password</label>
-                    <input
-                        type="password"
-                        className="form-control"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
+                <div className="space-y-2">
+                    <Label htmlFor="register-password">Password</Label>
+                    <Input id="register-password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <p className="text-xs text-muted-foreground">
+                        At least 8 characters with upper- and lowercase letters, a number and a special character.
+                    </p>
                 </div>
-                <div className="mb-3">
-                    <label className="form-label">Confirm Password</label>
-                    <input
-                        type="password"
-                        className="form-control"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                    />
+                <div className="space-y-2">
+                    <Label htmlFor="register-confirm">Confirm Password</Label>
+                    <Input id="register-confirm" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                 </div>
-                <button type="submit" className="btn btn-primary">Register</button>
+                <Button type="submit" size="lg" className="w-full">Register</Button>
             </form>
-        </div>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link to="/login" className="font-medium text-primary hover:underline">Login</Link>
+            </p>
+        </AuthLayout>
     );
 };
 

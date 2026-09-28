@@ -1,0 +1,20 @@
+# Grafana adatforrás — automatikusan beállítva induláskor, nincs kézi kattintgatás.
+#
+# A cím a Compose belső hálózatán érvényes (a Grafana és a Prometheus ugyanazon
+# a hálózaton fut), ezért `prometheus:9090`, nem `localhost`.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    # Rögzített azonosító: a dashboard JSON erre hivatkozik, így az import
+    # után nem kell kézzel adatforrást választani
+    uid: movieshop-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      # A scrape_interval-lel egyező érték: így a grafikonok nem "lyukasak"
+      timeInterval: 10s

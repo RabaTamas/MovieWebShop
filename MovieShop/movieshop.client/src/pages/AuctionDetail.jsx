@@ -3,38 +3,25 @@ import { useParams, Link } from 'react-router-dom';
 import * as signalR from '@microsoft/signalr';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { toast } from 'sonner';
+import { motion } from 'motion/react';
+import {
+    AlertCircle, ArrowLeft, CheckCircle2, Clock, CreditCard, Crown, Flag, History, PartyPopper, Radio, Timer, Trophy, Zap,
+} from 'lucide-react';
 import StripeCheckout from '../components/StripeCheckout';
+import AuctionCountdown from '../components/AuctionCountdown';
 import API_BASE_URL from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
-import './AuctionDetail.css';
+import { cn, formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LoadingState, Spinner } from '@/components/ui/spinner';
+import { EmptyState, PageContainer } from '@/components/ui/page';
 
 const HUB_URL = API_BASE_URL.replace('/api', '') + '/hubs/auction';
-
-function Countdown({ endsAt, onExpire }) {
-    const [remaining, setRemaining] = useState('');
-    const [urgent, setUrgent] = useState(false);
-
-    useEffect(() => {
-        const tick = () => {
-            const diff = new Date(endsAt) - Date.now();
-            if (diff <= 0) {
-                setRemaining('Ended');
-                onExpire?.();
-                return;
-            }
-            setUrgent(diff < 60000);
-            const h = Math.floor(diff / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            const s = Math.floor((diff % 60000) / 1000);
-            setRemaining(h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`);
-        };
-        tick();
-        const id = setInterval(tick, 1000);
-        return () => clearInterval(id);
-    }, [endsAt, onExpire]);
-
-    return <span className={urgent ? 'countdown urgent' : 'countdown'}>{remaining}</span>;
-}
 
 export default function AuctionDetail() {
     const { id } = useParams();
@@ -85,16 +72,16 @@ export default function AuctionDetail() {
             setBidAmount(prev => prev); // keep user's increment input unchanged
 
             const msg = antiSniping
-                ? `🏹 ${bidderName} bid ${amount.toLocaleString()} Ft — ⏱️ Auction extended!`
-                : `🏹 ${bidderName} bid ${amount.toLocaleString()} Ft`;
-            setEvents(prev => [...prev, { id: Date.now(), msg, time: new Date() }]);
+                ? `${bidderName} bid ${amount.toLocaleString()} Ft — Auction extended!`
+                : `${bidderName} bid ${amount.toLocaleString()} Ft`;
+            setEvents(prev => [...prev, { id: Date.now(), msg, time: new Date(), antiSniping }]);
         });
 
         connection.on('AuctionEnded', ({ winnerName, finalPrice, movieTitle }) => {
             setAuction(prev => prev ? { ...prev, status: 2 } : prev);
             const msg = winnerName
-                ? `🏆 Auction ended! ${winnerName} won "${movieTitle}" for ${finalPrice.toLocaleString()} Ft`
-                : `🏁 Auction ended with no bids.`;
+                ? `Auction ended! ${winnerName} won "${movieTitle}" for ${finalPrice.toLocaleString()} Ft`
+                : `Auction ended with no bids.`;
             setEvents(prev => [...prev, { id: Date.now(), msg, time: new Date(), highlight: true }]);
         });
 
@@ -111,7 +98,7 @@ export default function AuctionDetail() {
 
     // Auto-scroll event feed
     useEffect(() => {
-        eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        eventsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, [events]);
 
     const handleBid = async () => {
@@ -137,7 +124,7 @@ export default function AuctionDetail() {
             const data = await r.json();
 
             if (r.ok) {
-                setFeedback({ type: 'success', msg: `✅ Bid of ${amount.toLocaleString()} Ft placed successfully!` + (data.antiSnipingTriggered ? ' ⏱️ Auction extended (anti-sniping).' : '') });
+                setFeedback({ type: 'success', msg: `Bid of ${amount.toLocaleString()} Ft placed successfully!` + (data.antiSnipingTriggered ? ' Auction extended (anti-sniping).' : '') });
             } else {
                 setFeedback({ type: 'error', msg: data.error || 'Bid failed.' });
             }
@@ -148,17 +135,16 @@ export default function AuctionDetail() {
         }
     };
 
-    if (loading) return (
-        <div className="auction-detail-loading">
-            <div className="spinner-border text-primary" role="status" />
-        </div>
-    );
+    if (loading) return <LoadingState label="Loading auction…" />;
 
     if (!auction) return (
-        <div className="auction-not-found">
-            <h3>Auction not found</h3>
-            <Link to="/auctions">← Back to auctions</Link>
-        </div>
+        <PageContainer size="md">
+            <EmptyState icon={AlertCircle} title="Auction not found">
+                <Button variant="outline" asChild>
+                    <Link to="/auctions"><ArrowLeft />Back to auctions</Link>
+                </Button>
+            </EmptyState>
+        </PageContainer>
     );
 
     const isActive       = auction.status === 1;
@@ -174,11 +160,11 @@ export default function AuctionDetail() {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (!r.ok) { alert('Payment not available.'); return; }
+            if (!r.ok) { toast.error('Payment not available.'); return; }
             const data = await r.json();
             setStripePromise(loadStripe(data.publishableKey));
             setPaymentClientSecret(data.clientSecret);
-        } catch { alert('Network error.'); }
+        } catch { toast.error('Network error.'); }
     };
 
     const handlePaymentSuccess = async (paymentMethodId) => {
@@ -186,7 +172,7 @@ export default function AuctionDetail() {
         const { error, paymentIntent } = await stripe.confirmCardPayment(paymentClientSecret, {
             payment_method: paymentMethodId
         });
-        if (error) { alert('Payment failed: ' + error.message); return; }
+        if (error) { toast.error('Payment failed: ' + error.message); return; }
         if (paymentIntent.status === 'succeeded') {
             const r = await fetch(`${API_BASE_URL}/api/Auction/${id}/confirm-payment`, {
                 method: 'POST',
@@ -197,184 +183,258 @@ export default function AuctionDetail() {
                 setPaid(true);
                 setPaymentClientSecret(null);
             } else {
-                alert('Payment confirmed by Stripe but server verification failed.');
+                toast.error('Payment confirmed by Stripe but server verification failed.');
             }
         }
     };
 
     return (
-        <div className="auction-detail-page">
-            <Link to="/auctions" className="back-link">← All auctions</Link>
+        <PageContainer size="xl">
+            <Button variant="ghost" size="sm" className="mb-6" asChild>
+                <Link to="/auctions"><ArrowLeft />All auctions</Link>
+            </Button>
 
-            <div className="auction-detail-grid">
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
                 {/* Left: movie info */}
-                <div className="auction-movie-card">
-                    <img src={auction.imageUrl} alt={auction.title} className="auction-movie-img" />
-                    <div className="auction-movie-info">
-                        <h2>{auction.title}</h2>
-                        <div className="auction-meta">
-                            <span>Starting price: <strong>{auction.startingPrice.toLocaleString()} Ft</strong></span>
+                <div className="relative isolate overflow-hidden rounded-2xl border bg-card">
+                    {auction.imageUrl && (
+                        <div
+                            className="absolute inset-0 -z-10 scale-110 bg-cover bg-center opacity-30 blur-2xl"
+                            style={{ backgroundImage: `url(${auction.imageUrl})` }}
+                            aria-hidden="true"
+                        />
+                    )}
+                    <div className="grid gap-6 bg-gradient-to-br from-card/70 to-card p-6 sm:grid-cols-[200px_1fr]">
+                        <img
+                            src={auction.imageUrl}
+                            alt={auction.title}
+                            className="mx-auto aspect-[2/3] w-full max-w-[200px] rounded-xl object-cover shadow-2xl ring-1 ring-white/10"
+                        />
+                        <div className="flex flex-col gap-4">
+                            <h1 className="font-display text-5xl leading-none tracking-wide text-balance">{auction.title}</h1>
+                            <p className="text-muted-foreground">
+                                Starting price: <strong className="text-foreground">{formatPrice(auction.startingPrice)}</strong>
+                            </p>
+                            {isEnded && (
+                                <div className={cn(
+                                    "flex items-center gap-3 rounded-xl border p-4 font-semibold",
+                                    isWinner ? "border-primary/40 bg-primary/15 text-primary" : "bg-muted/60"
+                                )}>
+                                    {isWinner
+                                        ? <><PartyPopper className="size-5" />You won this auction!</>
+                                        : auction.currentBidderName
+                                            ? <><Trophy className="size-5 text-primary" />Winner: {auction.currentBidderName}</>
+                                            : <><Flag className="size-5" />Ended with no bids</>}
+                                </div>
+                            )}
                         </div>
-                        {isEnded && (
-                            <div className={`auction-ended-banner ${isWinner ? 'winner' : ''}`}>
-                                {isWinner
-                                    ? '🎉 You won this auction!'
-                                    : auction.currentBidderName
-                                        ? `🏆 Winner: ${auction.currentBidderName}`
-                                        : '🏁 Ended with no bids'}
-                            </div>
-                        )}
                     </div>
                 </div>
 
                 {/* Right: bidding panel */}
-                <div className="auction-bid-panel">
-                    <div className="auction-status-row">
-                        <span className={`auction-badge ${isActive ? 'badge-active' : isPending ? 'badge-pending' : 'badge-ended'}`}>
-                            {isActive ? '🟢 Live' : isPending ? '🕐 Starting soon' : '🏁 Ended'}
-                        </span>
-                        {isActive && (
-                            <div className="auction-time-block">
-                                <span className="auction-time-label">Time remaining</span>
-                                <Countdown endsAt={auction.endsAt} onExpire={loadAuction} />
-                            </div>
-                        )}
-                        {isPending && (
-                            <div className="auction-time-block">
-                                <span className="auction-time-label">Starts at</span>
-                                <span>{new Date(auction.startsAt).toLocaleString()}</span>
-                            </div>
-                        )}
-                    </div>
+                <Card className="gap-5 lg:sticky lg:top-24">
+                    <CardContent className="space-y-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span className={cn(
+                                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold",
+                                isActive ? "bg-success/15 text-success" : isPending ? "bg-sky-500/15 text-sky-400" : "bg-muted text-muted-foreground"
+                            )}>
+                                {isActive ? <><Radio className="size-4 animate-pulse" />Live</> : isPending ? <><Clock className="size-4" />Starting soon</> : <><Flag className="size-4" />Ended</>}
+                            </span>
+                            {isActive && (
+                                <div className="text-right">
+                                    <div className="text-xs tracking-wider text-muted-foreground uppercase">Time remaining</div>
+                                    <div className="flex items-center justify-end gap-1.5 text-xl font-bold">
+                                        <Timer className="size-5 text-primary" />
+                                        <AuctionCountdown endsAt={auction.endsAt} onExpire={loadAuction} />
+                                    </div>
+                                </div>
+                            )}
+                            {isPending && (
+                                <div className="text-right">
+                                    <div className="text-xs tracking-wider text-muted-foreground uppercase">Starts at</div>
+                                    <div className="font-medium">{new Date(auction.startsAt).toLocaleString()}</div>
+                                </div>
+                            )}
+                        </div>
 
-                    <div className="current-price-block">
-                        <div className="current-price-label">Current highest bid</div>
-                        <div className="current-price-value">{auction.currentPrice.toLocaleString()} Ft</div>
-                        {auction.currentBidderName && (
-                            <div className="current-bidder">👑 {auction.currentBidderName}</div>
-                        )}
-                    </div>
-
-                    {/* Bid form — only for active auctions, logged-in users */}
-                    {isActive && token && (
-                        <div className="bid-form">
-                            <label className="bid-label">
-                                Raise by (min. {minIncrement.toLocaleString()} Ft)
-                            </label>
-                            <div className="bid-input-row">
-                                <input
-                                    type="number"
-                                    value={bidAmount}
-                                    onChange={e => setBidAmount(e.target.value)}
-                                    min={minIncrement}
-                                    step={minIncrement}
-                                    className="bid-input"
-                                    disabled={bidding}
-                                    placeholder={minIncrement.toLocaleString()}
-                                />
-                                <span className="bid-currency">Ft</span>
-                            </div>
-                            <div className="bid-total-preview">
-                                Your total bid: <strong>{totalBid.toLocaleString()} Ft</strong>
-                            </div>
-                            <button
-                                className="btn-place-bid"
-                                onClick={handleBid}
-                                disabled={bidding || parseFloat(bidAmount) < minIncrement}
+                        <div className="rounded-xl bg-muted/50 p-5 text-center">
+                            <div className="text-xs tracking-wider text-muted-foreground uppercase">Current highest bid</div>
+                            {/* Új licitnél a ár „ráugrik": a key váltás újraindítja az animációt */}
+                            <motion.div
+                                key={auction.currentPrice}
+                                initial={{ scale: 1.35, opacity: 0.3, textShadow: "0 0 40px var(--primary)" }}
+                                animate={{ scale: 1, opacity: 1, textShadow: "0 0 0px transparent" }}
+                                transition={{ type: "spring", stiffness: 260, damping: 16 }}
+                                className="mt-1 text-4xl font-bold text-primary"
                             >
-                                {bidding ? 'Placing bid…' : '⚡ Place Bid'}
-                            </button>
-
-                            {feedback && (
-                                <div className={`bid-feedback ${feedback.type}`}>
-                                    {feedback.msg}
+                                {formatPrice(auction.currentPrice)}
+                            </motion.div>
+                            {auction.currentBidderName && (
+                                <div className="mt-2 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+                                    <Crown className="size-4 text-primary" /> {auction.currentBidderName}
                                 </div>
                             )}
-
-                            <p className="anti-sniping-note">
-                                ⏱️ Bids placed in the last 60 seconds extend the auction by 1 minute (anti-sniping).
-                            </p>
                         </div>
-                    )}
 
-                    {isActive && !token && (
-                        <div className="bid-login-prompt">
-                            <Link to="/login">Log in</Link> to place a bid.
-                        </div>
-                    )}
-
-                    {/* Winner payment section */}
-                    {isEnded && isWinner && (
-                        <div className="winner-payment-section">
-                            {paid || auction.isPaid ? (
-                                <div className="payment-success-banner">
-                                    ✅ Payment complete — the item will be delivered to you.
+                        {/* Bid form — only for active auctions, logged-in users */}
+                        {isActive && token && (
+                            <div className="space-y-3">
+                                <Label htmlFor="bid-amount">
+                                    Raise by (min. {formatPrice(minIncrement)})
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="bid-amount"
+                                        type="number"
+                                        value={bidAmount}
+                                        onChange={e => setBidAmount(e.target.value)}
+                                        min={minIncrement}
+                                        step={minIncrement}
+                                        className="h-11 pr-10 text-lg"
+                                        disabled={bidding}
+                                        placeholder={minIncrement.toLocaleString()}
+                                    />
+                                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-muted-foreground">Ft</span>
                                 </div>
-                            ) : !paymentClientSecret ? (
-                                <button className="btn-pay-now" onClick={handleStartPayment}>
-                                    💳 Pay {auction.currentPrice.toLocaleString()} Ft
-                                </button>
-                            ) : (
-                                stripePromise && (
-                                    <Elements stripe={stripePromise} options={{ clientSecret: paymentClientSecret }}>
-                                        <StripeCheckout
-                                            amount={auction.currentPrice}
-                                            onSuccess={handlePaymentSuccess}
-                                            onError={msg => alert('Payment error: ' + msg)}
-                                        />
-                                    </Elements>
-                                )
-                            )}
-                        </div>
-                    )}
-                </div>
+                                <div className="text-sm text-muted-foreground">
+                                    Your total bid: <strong className="text-foreground">{formatPrice(totalBid)}</strong>
+                                </div>
+                                <Button
+                                    size="lg"
+                                    className="h-12 w-full text-base"
+                                    onClick={handleBid}
+                                    disabled={bidding || parseFloat(bidAmount) < minIncrement}
+                                >
+                                    {bidding ? <><Spinner />Placing bid…</> : <><Zap />Place Bid</>}
+                                </Button>
+
+                                {feedback && (
+                                    <div className={cn(
+                                        "flex items-start gap-2 rounded-lg border px-3 py-2 text-sm",
+                                        feedback.type === 'success' ? "border-success/30 bg-success/10 text-success" : "border-destructive/30 bg-destructive/10 text-destructive"
+                                    )}>
+                                        {feedback.type === 'success' ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" /> : <AlertCircle className="mt-0.5 size-4 shrink-0" />}
+                                        {feedback.msg}
+                                    </div>
+                                )}
+
+                                <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                                    <Timer className="mt-0.5 size-3.5 shrink-0" />
+                                    Bids placed in the last 60 seconds extend the auction by 1 minute (anti-sniping).
+                                </p>
+                            </div>
+                        )}
+
+                        {isActive && !token && (
+                            <div className="rounded-lg bg-muted/60 p-4 text-center text-sm">
+                                <Link to="/login" className="font-semibold text-primary hover:underline">Log in</Link> to place a bid.
+                            </div>
+                        )}
+
+                        {/* Winner payment section */}
+                        {isEnded && isWinner && (
+                            <div className="space-y-3">
+                                {paid || auction.isPaid ? (
+                                    <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-4 text-sm font-medium text-success">
+                                        <CheckCircle2 className="size-5 shrink-0" />
+                                        Payment complete — the item will be delivered to you.
+                                    </div>
+                                ) : !paymentClientSecret ? (
+                                    <Button size="lg" className="h-12 w-full text-base" onClick={handleStartPayment}>
+                                        <CreditCard /> Pay {formatPrice(auction.currentPrice)}
+                                    </Button>
+                                ) : (
+                                    stripePromise && (
+                                        <Elements stripe={stripePromise} options={{ clientSecret: paymentClientSecret }}>
+                                            <StripeCheckout
+                                                amount={auction.currentPrice}
+                                                onSuccess={handlePaymentSuccess}
+                                                onError={msg => toast.error('Payment error: ' + msg)}
+                                            />
+                                        </Elements>
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Live event feed + bid history */}
-            <div className="auction-bottom-grid">
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
                 {/* Live events */}
-                <div className="auction-events">
-                    <h5>⚡ Live feed</h5>
-                    <div className="events-list">
-                        {events.length === 0 && <p className="no-events">Waiting for bids…</p>}
-                        {events.map(e => (
-                            <div key={e.id} className={`event-item ${e.highlight ? 'highlight' : ''}`}>
-                                <span className="event-time">{e.time.toLocaleTimeString()}</span>
-                                <span className="event-msg">{e.msg}</span>
-                            </div>
-                        ))}
-                        <div ref={eventsEndRef} />
-                    </div>
-                </div>
+                <Card className="gap-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Zap className="size-4 text-primary" />Live feed</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-64 space-y-2 overflow-y-auto pr-1">
+                            {events.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Waiting for bids…</p>}
+                            {events.map(e => (
+                                <motion.div
+                                    key={e.id}
+                                    initial={{ opacity: 0, x: -24, scale: 0.96 }}
+                                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                                    className={cn(
+                                        "flex gap-3 rounded-lg px-3 py-2 text-sm",
+                                        e.highlight ? "border border-primary/30 bg-primary/10 font-medium" : "bg-muted/50"
+                                    )}
+                                >
+                                    <span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">{e.time.toLocaleTimeString()}</span>
+                                    <span className="flex items-center gap-1.5">
+                                        {e.highlight ? <Trophy className="size-3.5 shrink-0 text-primary" /> : <Zap className="size-3.5 shrink-0 text-primary" />}
+                                        {e.msg}
+                                        {e.antiSniping && <Timer className="size-3.5 shrink-0 text-destructive" />}
+                                    </span>
+                                </motion.div>
+                            ))}
+                            <div ref={eventsEndRef} />
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Bid history */}
-                <div className="auction-bids">
-                    <h5>📋 Bid history</h5>
-                    {auction.recentBids.length === 0
-                        ? <p className="no-bids">No bids yet. Be the first!</p>
-                        : (
-                            <table className="bids-table">
-                                <thead>
-                                    <tr>
-                                        <th>Bidder</th>
-                                        <th>Amount</th>
-                                        <th>Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {auction.recentBids.map(b => (
-                                        <tr key={b.id} className={b.id === auction.recentBids[0]?.id ? 'top-bid' : ''}>
-                                            <td>{b.bidderName}</td>
-                                            <td><strong>{b.amount.toLocaleString()} Ft</strong></td>
-                                            <td>{new Date(b.placedAt).toLocaleTimeString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )
-                    }
-                </div>
+                <Card className="gap-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><History className="size-4 text-primary" />Bid history</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {auction.recentBids.length === 0
+                            ? <p className="py-10 text-center text-sm text-muted-foreground">No bids yet. Be the first!</p>
+                            : (
+                                <Table containerClassName="max-h-64 overflow-y-auto">
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead>Bidder</TableHead>
+                                            <TableHead>Amount</TableHead>
+                                            <TableHead className="text-right">Time</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {auction.recentBids.map(b => {
+                                            const isTop = b.id === auction.recentBids[0]?.id;
+                                            return (
+                                                <TableRow key={b.id} className={cn(isTop && "bg-primary/10 hover:bg-primary/15")}>
+                                                    <TableCell className="font-medium">
+                                                        <span className="flex items-center gap-1.5">
+                                                            {isTop && <Crown className="size-3.5 text-primary" />}
+                                                            {b.bidderName}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="font-semibold">{formatPrice(b.amount)}</TableCell>
+                                                    <TableCell className="text-right text-muted-foreground tabular-nums">{new Date(b.placedAt).toLocaleTimeString()}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            )
+                        }
+                    </CardContent>
+                </Card>
             </div>
-        </div>
+        </PageContainer>
     );
 }

@@ -1,13 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+    AlertCircle, ArrowLeft, CheckCircle2, Clapperboard, FileVideo, Hourglass, Info, PlayCircle, Trash2, Upload, X,
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import API_BASE_URL from '../../config/api';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { LoadingState, Spinner } from '@/components/ui/spinner';
+import { PageContainer, PageHeader } from '@/components/ui/page';
+
+const StatusRow = ({ label, children }) => (
+    <div className="flex items-center justify-between gap-3 py-2 text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="text-right font-medium">{children}</span>
+    </div>
+);
 
 const AdminVideoUpload = () => {
     const { movieId } = useParams();
     const { token } = useAuth();
     const navigate = useNavigate();
-    
+
     const [movie, setMovie] = useState(null);
     const [videoInfo, setVideoInfo] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -19,6 +37,15 @@ const AdminVideoUpload = () => {
     useEffect(() => {
         fetchMovieAndVideoInfo();
     }, [movieId, token]);
+
+    // Transzkódolás közben (percekig tarthat) 10 másodpercenként frissítjük az állapotot,
+    // így a „Processing..." magától „Complete"-re vált, nem kell kézzel újratölteni az oldalt
+    const transcodingInProgress = videoInfo?.hasVideo && !videoInfo?.transcodingComplete;
+    useEffect(() => {
+        if (!transcodingInProgress) return;
+        const id = setInterval(fetchMovieAndVideoInfo, 10000);
+        return () => clearInterval(id);
+    }, [transcodingInProgress, movieId, token]);
 
     const fetchMovieAndVideoInfo = async () => {
         try {
@@ -36,7 +63,7 @@ const AdminVideoUpload = () => {
                     const videoResponse = await fetch(`${API_BASE_URL}/api/admin/Video/${movieId}/info`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
-                    
+
                     if (videoResponse.ok) {
                         const videoData = await videoResponse.json();
                         setVideoInfo(videoData);
@@ -107,7 +134,10 @@ const AdminVideoUpload = () => {
 
             xhr.addEventListener('load', () => {
                 if (xhr.status === 200) {
-                    setMessage({ type: 'success', text: 'Video uploaded successfully!' });
+                    setMessage({
+                        type: 'success',
+                        text: 'Video uploaded successfully! The original MP4 is playable right away; HLS transcoding (480p/720p/1080p) runs in the background and may take a few minutes — this page updates automatically.',
+                    });
                     setSelectedFile(null);
                     fetchMovieAndVideoInfo();
                 } else {
@@ -157,191 +187,152 @@ const AdminVideoUpload = () => {
     };
 
     if (loading) {
-        return (
-            <div className="container mt-5">
-                <div className="text-center">
-                    <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            </div>
-        );
+        return <LoadingState />;
     }
 
+    const qualityBadge = (ready) => ready
+        ? <Badge variant="success"><CheckCircle2 />Ready</Badge>
+        : <Badge variant="muted"><Hourglass />Pending</Badge>;
+
     return (
-        <div className="container mt-4">
-            <div className="row">
-                <div className="col-md-8 offset-md-2">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                        <h2>Video Upload</h2>
-                        <button onClick={() => navigate('/admin/movies')} className="btn btn-secondary">
-                            <i className="bi bi-arrow-left me-2"></i>Back to Movies
+        <PageContainer size="md">
+            <PageHeader title="Video Upload" icon={FileVideo} description={movie?.title ? `${movie.title} · Movie ID: ${movieId}` : `Movie ID: ${movieId}`}>
+                <Button variant="outline" onClick={() => navigate('/admin/movies')}>
+                    <ArrowLeft /> Back to Movies
+                </Button>
+            </PageHeader>
+
+            <div className="space-y-6">
+                {message && (
+                    <Alert variant={message.type === 'success' ? 'success' : 'destructive'} className="pr-10">
+                        {message.type === 'success' ? <CheckCircle2 /> : <AlertCircle />}
+                        <AlertDescription>{message.text}</AlertDescription>
+                        <button
+                            type="button"
+                            className="absolute top-2.5 right-2.5 cursor-pointer rounded p-1 opacity-70 hover:opacity-100"
+                            aria-label="Close"
+                            onClick={() => setMessage(null)}
+                        >
+                            <X className="size-4" />
                         </button>
-                    </div>
+                    </Alert>
+                )}
 
-                    {message && (
-                        <div className={`alert alert-${message.type} alert-dismissible fade show`} role="alert">
-                            {message.text}
-                            <button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
-                        </div>
-                    )}
-
-                    {/* Movie Info */}
-                    <div className="card mb-4">
-                        <div className="card-body">
-                            <h5 className="card-title">{movie?.title}</h5>
-                            <p className="text-muted">Movie ID: {movieId}</p>
-                        </div>
-                    </div>
-
-                    {/* Current Video Status */}
-                    {videoInfo?.hasVideo && (
-                        <div className="card mb-4">
-                            <div className="card-header bg-success text-white">
-                                <i className="bi bi-check-circle me-2"></i>Current Video Status
-                            </div>
-                            <div className="card-body">
-                                <div className="row">
-                                    <div className="col-md-6">
-                                        <p><strong>Filename:</strong> {videoInfo.videoFileName}</p>
-                                        <p><strong>Original Size:</strong> {videoInfo.fileSizeMB?.toFixed(2)} MB</p>
-                                        <p><strong>Original File:</strong> 
-                                            {videoInfo.originalExists ? (
-                                                <span className="badge bg-success ms-2">Uploaded</span>
-                                            ) : (
-                                                <span className="badge bg-warning ms-2">Missing</span>
-                                            )}
-                                        </p>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <p><strong>Transcoding Status:</strong> 
-                                            {videoInfo.transcodingComplete ? (
-                                                <span className="badge bg-success ms-2">✓ Complete</span>
-                                            ) : (
-                                                <span className="badge bg-warning ms-2">⏳ Processing...</span>
-                                            )}
-                                        </p>
-                                        {videoInfo.transcodedVersions && (
-                                            <>
-                                                <p><strong>Available Qualities:</strong></p>
-                                                <ul className="list-unstyled ms-3">
-                                                    <li>
-                                                        480p: {videoInfo.transcodedVersions['480p'] ? (
-                                                            <span className="badge bg-success">✓</span>
-                                                        ) : (
-                                                            <span className="badge bg-secondary">⏳</span>
-                                                        )}
-                                                    </li>
-                                                    <li>
-                                                        720p: {videoInfo.transcodedVersions['720p'] ? (
-                                                            <span className="badge bg-success">✓</span>
-                                                        ) : (
-                                                            <span className="badge bg-secondary">⏳</span>
-                                                        )}
-                                                    </li>
-                                                    <li>
-                                                        1080p: {videoInfo.transcodedVersions['1080p'] ? (
-                                                            <span className="badge bg-success">✓</span>
-                                                        ) : (
-                                                            <span className="badge bg-secondary">⏳</span>
-                                                        )}
-                                                    </li>
-                                                    {videoInfo.manifestExists && (
-                                                        <li className="mt-2">
-                                                            <span className="badge bg-primary">
-                                                                <i className="bi bi-play-circle me-1"></i>
-                                                                HLS Adaptive Streaming Ready
-                                                            </span>
-                                                        </li>
-                                                    )}
-                                                </ul>
-                                            </>
-                                        )}
-                                    </div>
+                {/* Current Video Status */}
+                {videoInfo?.hasVideo && (
+                    <Card className="border-success/30">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-success">
+                                <CheckCircle2 className="size-5" />Current Video Status
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-x-8 md:grid-cols-2">
+                                <div className="divide-y">
+                                    <StatusRow label="Filename"><code className="text-xs break-all">{videoInfo.videoFileName}</code></StatusRow>
+                                    <StatusRow label="Original Size">{videoInfo.fileSizeMB?.toFixed(2)} MB</StatusRow>
+                                    <StatusRow label="Original File">
+                                        {videoInfo.originalExists
+                                            ? <Badge variant="success">Uploaded</Badge>
+                                            : <Badge variant="warning">Missing</Badge>}
+                                    </StatusRow>
                                 </div>
-                                <button onClick={handleDelete} className="btn btn-danger mt-3">
-                                    <i className="bi bi-trash me-2"></i>Delete All Video Files
-                                </button>
+                                <div className="divide-y">
+                                    <StatusRow label="Transcoding Status">
+                                        {videoInfo.transcodingComplete
+                                            ? <Badge variant="success"><CheckCircle2 />Complete</Badge>
+                                            : <Badge variant="warning"><Spinner className="size-3" />Processing...</Badge>}
+                                    </StatusRow>
+                                    {videoInfo.transcodedVersions && (
+                                        <>
+                                            <StatusRow label="480p">{qualityBadge(videoInfo.transcodedVersions['480p'])}</StatusRow>
+                                            <StatusRow label="720p">{qualityBadge(videoInfo.transcodedVersions['720p'])}</StatusRow>
+                                            <StatusRow label="1080p">{qualityBadge(videoInfo.transcodedVersions['1080p'])}</StatusRow>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Upload Section */}
-                    <div className="card">
-                        <div className="card-header">
-                            <i className="bi bi-upload me-2"></i>
-                            {videoInfo?.hasVideo ? 'Replace Video' : 'Upload Video'}
-                        </div>
-                        <div className="card-body">
-                            <div className="mb-3">
-                                <label htmlFor="videoFile" className="form-label">
-                                    Select MP4 Video File
-                                </label>
-                                <input
-                                    type="file"
-                                    className="form-control"
-                                    id="videoFile"
-                                    accept="video/mp4"
-                                    onChange={handleFileSelect}
-                                    disabled={uploading}
-                                />
-                                {selectedFile && (
-                                    <div className="mt-2">
-                                        <small className="text-muted">
-                                            Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                                        </small>
-                                    </div>
-                                )}
-                            </div>
-
-                            {uploading && (
-                                <div className="mb-3">
-                                    <div className="progress">
-                                        <div
-                                            className="progress-bar progress-bar-striped progress-bar-animated"
-                                            role="progressbar"
-                                            style={{ width: `${uploadProgress}%` }}
-                                        >
-                                            {uploadProgress}%
-                                        </div>
-                                    </div>
+                            {videoInfo.transcodedVersions && videoInfo.manifestExists && (
+                                <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+                                    <PlayCircle className="size-4" />
+                                    HLS Adaptive Streaming Ready
                                 </div>
                             )}
+                            <Button variant="destructive" onClick={handleDelete}>
+                                <Trash2 />Delete All Video Files
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
 
-                            <button
-                                onClick={handleUpload}
-                                className="btn btn-primary"
-                                disabled={!selectedFile || uploading}
+                {/* Upload Section */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Upload className="size-5 text-primary" />
+                            {videoInfo?.hasVideo ? 'Replace Video' : 'Upload Video'}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="videoFile">Select MP4 Video File</Label>
+                            <label
+                                htmlFor="videoFile"
+                                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors hover:border-primary/60 hover:bg-primary/5"
                             >
-                                {uploading ? (
-                                    <>
-                                        <span className="spinner-border spinner-border-sm me-2"></span>
-                                        Uploading...
-                                    </>
+                                <Clapperboard className="size-8 text-muted-foreground" />
+                                {selectedFile ? (
+                                    <span className="text-sm">
+                                        Selected: <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                                    </span>
                                 ) : (
-                                    <>
-                                        <i className="bi bi-upload me-2"></i>Upload Video
-                                    </>
+                                    <span className="text-sm text-muted-foreground">Click to choose an .mp4 file</span>
                                 )}
-                            </button>
+                            </label>
+                            {/* Natív, rejtett input: a fenti dropzone-label nyitja meg (a shadcn Input w-full-ja felülírná az sr-only szélességét) */}
+                            <input
+                                type="file"
+                                id="videoFile"
+                                className="sr-only"
+                                accept="video/mp4"
+                                onChange={handleFileSelect}
+                                disabled={uploading}
+                            />
                         </div>
-                    </div>
 
-                    {/* Instructions */}
-                    <div className="alert alert-info mt-4">
-                        <h6><i className="bi bi-info-circle me-2"></i>Azure Blob + HLS Streaming Info:</h6>
-                        <ul className="mb-0">
+                        {uploading && (
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Uploading...</span>
+                                    <span className="font-mono">{uploadProgress}%</span>
+                                </div>
+                                <Progress value={uploadProgress} />
+                            </div>
+                        )}
+
+                        <Button onClick={handleUpload} disabled={!selectedFile || uploading}>
+                            {uploading ? <><Spinner />Uploading...</> : <><Upload />Upload Video</>}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Instructions */}
+                <Alert variant="info">
+                    <Info />
+                    <AlertTitle>Azure Blob + HLS Streaming Info:</AlertTitle>
+                    <AlertDescription>
+                        <ul className="list-disc space-y-0.5 pl-4">
                             <li>Only MP4 format is supported (1080p recommended)</li>
-                            <li>Video will be uploaded to Azure Blob Storage as <code>{movieId}.mp4</code></li>
+                            <li>Video will be uploaded to Azure Blob Storage as <code className="rounded bg-muted px-1">{movieId}.mp4</code></li>
                             <li>Background job automatically transcodes to 480p, 720p, and 1080p</li>
                             <li>HLS manifest generated for adaptive streaming</li>
                             <li>Large files may take several minutes to upload and transcode</li>
                             <li>Users stream via SAS tokens with 1-hour expiry</li>
                         </ul>
-                    </div>
-                </div>
+                    </AlertDescription>
+                </Alert>
             </div>
-        </div>
+        </PageContainer>
     );
 };
 

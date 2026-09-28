@@ -196,7 +196,9 @@ namespace MovieShop.Server.Services.Implementations
             {
                 var requestBody = new
                 {
-                    model = "llama-3.3-70b-versatile",
+                    // A Groq kivezette a llama-3.3-70b-versatile modellt; eszközhívásra a
+                    // nagyobb gpt-oss-120b az alapértelmezés, konfigurációból felülírható.
+                    model = _configuration["Groq:AgentModel"] ?? "openai/gpt-oss-120b",
                     max_tokens = 1024,
                     tools = Tools,
                     messages

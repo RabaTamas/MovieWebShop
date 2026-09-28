@@ -23,6 +23,7 @@ namespace MovieShop.Server.Data
         public DbSet<VideoProgress> VideoProgresses { get; set; }
         public DbSet<Auction> Auctions { get; set; }
         public DbSet<Bid> Bids { get; set; }
+        public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -119,6 +120,17 @@ namespace MovieShop.Server.Data
                 .HasForeignKey(b => b.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Web Push: egy böngésző-feliratkozás (Endpoint) csak egyszer szerepelhet;
+            // a felhasználó törlésével a feliratkozásai is törlődnek
+            modelBuilder.Entity<WebPushSubscription>()
+                .HasIndex(s => s.Endpoint)
+                .IsUnique();
+
+            modelBuilder.Entity<WebPushSubscription>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         public override int SaveChanges()

@@ -1,15 +1,25 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { AlertCircle, Minus, Plus, RefreshCw, ShoppingCart, Trash2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { UserRoles } from "../constants/UserRoles";
 
 import API_BASE_URL from "../config/api";
+import { formatPrice } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LoadingState } from "@/components/ui/spinner";
+import { EmptyState, PageContainer, PageHeader } from "@/components/ui/page";
 
 const AdminShoppingCarts = () => {
     const { token, user } = useAuth();
     const [carts, setCarts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [expandedCart, setExpandedCart] = useState(null);
     const [selectedUser, setSelectedUser] = useState(null);
     const [users, setUsers] = useState([]);
 
@@ -108,10 +118,10 @@ const AdminShoppingCarts = () => {
 
             // Refresh cart data
             fetchCartForUser(userId);
-            alert("Cart cleared successfully!");
+            toast.success("Cart cleared successfully!");
         } catch (err) {
             console.error("Failed to clear cart:", err);
-            alert(`Failed to clear cart: ${err.message}`);
+            toast.error(`Failed to clear cart: ${err.message}`);
         }
     };
 
@@ -136,7 +146,7 @@ const AdminShoppingCarts = () => {
             fetchCartForUser(userId);
         } catch (err) {
             console.error("Failed to remove item:", err);
-            alert(`Failed to remove item: ${err.message}`);
+            toast.error(`Failed to remove item: ${err.message}`);
         }
     };
 
@@ -162,7 +172,7 @@ const AdminShoppingCarts = () => {
             fetchCartForUser(userId);
         } catch (err) {
             console.error("Failed to update quantity:", err);
-            alert(`Failed to update quantity: ${err.message}`);
+            toast.error(`Failed to update quantity: ${err.message}`);
         }
     };
 
@@ -170,143 +180,143 @@ const AdminShoppingCarts = () => {
         return items.reduce((sum, item) => sum + (item.priceAtOrder * item.quantity), 0);
     };
 
-    if (loading) {
-        return <div className="container mt-4"><div className="spinner-border" role="status"></div> Loading shopping carts...</div>;
-    }
-
     if (error) {
         return (
-            <div className="container mt-4">
-                <div className="alert alert-danger">
-                    Error: {error}
-                    <button className="btn btn-sm btn-outline-secondary ms-2" onClick={() => window.location.reload()}>
-                        Refresh Page
-                    </button>
-                </div>
-            </div>
+            <PageContainer size="md">
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription>
+                        <span>Error: {error}</span>
+                        <Button size="sm" variant="outline" className="mt-2" onClick={() => window.location.reload()}>
+                            <RefreshCw /> Refresh Page
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            </PageContainer>
         );
     }
 
     return (
-        <div className="container mt-4">
-            <h1>Manage Shopping Carts</h1>
+        <PageContainer size="xl">
+            <PageHeader title="Manage Shopping Carts" icon={ShoppingCart}>
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                    <Label htmlFor="cart-user" className="whitespace-nowrap text-muted-foreground">Select User</Label>
+                    <NativeSelect
+                        id="cart-user"
+                        containerClassName="sm:w-80"
+                        value={selectedUser?.id || ''}
+                        onChange={(e) => handleSelectUser(parseInt(e.target.value))}
+                    >
+                        {users.map(user => (
+                            <option key={user.id} value={user.id}>
+                                {user.name} ({user.email})
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </div>
+            </PageHeader>
 
-            <div className="row mb-4">
-                <div className="col-md-6">
-                    <div className="card">
-                        <div className="card-header bg-primary text-white">
-                            <h5 className="mb-0">Select User</h5>
-                        </div>
-                        <div className="card-body">
-                            <select
-                                className="form-select"
-                                value={selectedUser?.id || ''}
-                                onChange={(e) => handleSelectUser(parseInt(e.target.value))}
+            {loading ? (
+                <LoadingState label="Loading shopping carts..." className="min-h-[30vh]" />
+            ) : selectedUser && carts.length > 0 && (
+                <Card className="gap-4">
+                    <CardHeader>
+                        <CardTitle>Cart for {selectedUser.name}</CardTitle>
+                        <CardDescription>{selectedUser.email}</CardDescription>
+                        <CardAction>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleClearCart(selectedUser.id)}
+                                disabled={!carts[0]?.items?.length}
                             >
-                                {users.map(user => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.name} ({user.email})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {selectedUser && carts.length > 0 && (
-                <div className="card mb-4">
-                    <div className="card-header d-flex justify-content-between align-items-center">
-                        <h5 className="mb-0">
-                            Cart for {selectedUser.name} ({selectedUser.email})
-                        </h5>
-                        <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleClearCart(selectedUser.id)}
-                            disabled={!carts[0]?.items?.length}
-                        >
-                            <i className="bi bi-trash me-1"></i>
-                            Clear Cart
-                        </button>
-                    </div>
-                    <div className="card-body">
+                                <Trash2 /> Clear Cart
+                            </Button>
+                        </CardAction>
+                    </CardHeader>
+                    <CardContent>
                         {carts[0]?.items?.length ? (
-                            <div className="table-responsive">
-                                <table className="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Movie ID</th>
-                                            <th>Title</th>
-                                            <th>Price</th>
-                                            <th>Quantity</th>
-                                            <th>Subtotal</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {carts[0].items.map(item => (
-                                            <tr key={item.movieId}>
-                                                <td>{item.movieId}</td>
-                                                <td>{item.title}</td>
-                                                <td>${item.priceAtOrder}</td>
-                                                <td>
-                                                    <div className="input-group input-group-sm" style={{ maxWidth: "150px" }}>
-                                                        <button
-                                                            className="btn btn-outline-secondary"
-                                                            onClick={() => handleUpdateQuantity(selectedUser.id, item.movieId, Math.max(1, item.quantity - 1))}
-                                                            disabled={item.quantity <= 1}
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <input
-                                                            type="number"
-                                                            className="form-control text-center"
-                                                            value={item.quantity}
-                                                            min="1"
-                                                            onChange={(e) => {
-                                                                const value = parseInt(e.target.value);
-                                                                if (value > 0) {
-                                                                    handleUpdateQuantity(selectedUser.id, item.movieId, value);
-                                                                }
-                                                            }}
-                                                        />
-                                                        <button
-                                                            className="btn btn-outline-secondary"
-                                                            onClick={() => handleUpdateQuantity(selectedUser.id, item.movieId, item.quantity + 1)}
-                                                        >
-                                                            +
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                                <td>${(item.priceAtOrder * item.quantity).toFixed(2)}</td>
-                                                <td>
-                                                    <button
-                                                        className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => handleRemoveItem(selectedUser.id, item.movieId)}
+                            <Table containerClassName="rounded-lg border">
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead>Movie ID</TableHead>
+                                        <TableHead>Title</TableHead>
+                                        <TableHead>Price</TableHead>
+                                        <TableHead>Quantity</TableHead>
+                                        <TableHead>Subtotal</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {carts[0].items.map(item => (
+                                        <TableRow key={item.movieId}>
+                                            <TableCell className="text-muted-foreground">{item.movieId}</TableCell>
+                                            <TableCell className="font-medium">{item.title}</TableCell>
+                                            <TableCell className="whitespace-nowrap">{formatPrice(item.priceAtOrder)}</TableCell>
+                                            <TableCell>
+                                                <div className="inline-flex items-center rounded-md border">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        className="rounded-r-none"
+                                                        aria-label="Decrease quantity"
+                                                        onClick={() => handleUpdateQuantity(selectedUser.id, item.movieId, Math.max(1, item.quantity - 1))}
+                                                        disabled={item.quantity <= 1}
                                                     >
-                                                        <i className="bi bi-trash"></i> Remove
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colSpan="4" className="text-end fw-bold">Total:</td>
-                                            <td colSpan="2" className="fw-bold">${calculateTotal(carts[0].items).toFixed(2)}</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                                                        <Minus />
+                                                    </Button>
+                                                    <input
+                                                        type="number"
+                                                        className="h-8 w-12 border-x bg-transparent text-center text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                                                        aria-label="Quantity"
+                                                        value={item.quantity}
+                                                        min="1"
+                                                        onChange={(e) => {
+                                                            const value = parseInt(e.target.value);
+                                                            if (value > 0) {
+                                                                handleUpdateQuantity(selectedUser.id, item.movieId, value);
+                                                            }
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        className="rounded-l-none"
+                                                        aria-label="Increase quantity"
+                                                        onClick={() => handleUpdateQuantity(selectedUser.id, item.movieId, item.quantity + 1)}
+                                                    >
+                                                        <Plus />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap">{formatPrice(item.priceAtOrder * item.quantity)}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-destructive hover:text-destructive"
+                                                    onClick={() => handleRemoveItem(selectedUser.id, item.movieId)}
+                                                >
+                                                    <Trash2 /> Remove
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableCell colSpan={4} className="text-right font-bold">Total:</TableCell>
+                                        <TableCell colSpan={2} className="font-bold">{formatPrice(calculateTotal(carts[0].items))}</TableCell>
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
                         ) : (
-                            <div className="alert alert-info">
-                                This user's cart is empty.
-                            </div>
+                            <EmptyState icon={ShoppingCart} title="This user's cart is empty." className="py-10" />
                         )}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             )}
-        </div>
+        </PageContainer>
     );
 };
 

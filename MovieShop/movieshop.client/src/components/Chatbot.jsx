@@ -1,13 +1,30 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Chatbot.css';
+import {
+    ArrowUpRight, BookOpen, Bot, Clapperboard, MessageCircle, Mic, MicOff, SendHorizontal, ShoppingCart, Volume2, VolumeX, X, Zap,
+} from 'lucide-react';
 import API_BASE_URL from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 // Browser support check
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 const speechSupported = !!SpeechRecognitionAPI;
 const ttsSupported = 'speechSynthesis' in window;
+
+const SourceTag = ({ source }) => {
+    const map = {
+        FAQ: { icon: BookOpen, label: 'FAQ' },
+        agent: { icon: Zap, label: 'Agent' },
+    };
+    const { icon: Icon, label } = map[source] ?? { icon: Bot, label: 'AI' };
+    return (
+        <span className="mt-1.5 flex items-center gap-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            <Icon className="size-3" />{label}
+        </span>
+    );
+};
 
 const Chatbot = () => {
     const { token } = useAuth();
@@ -18,6 +35,8 @@ const Chatbot = () => {
     ]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    const inputRef = useRef(null);
+    const messagesEndRef = useRef(null);
 
     // Voice input
     const [isListening, setIsListening] = useState(false);
@@ -42,6 +61,11 @@ const Chatbot = () => {
         return () => window.removeEventListener('chatbot:open', handler);
     }, []);
 
+    // Keep the newest message in view
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, [messages, loading, isOpen]);
+
     const [activeTab, setActiveTab] = useState('faq'); // 'faq' | 'actions'
 
     const faqButtons = [
@@ -52,8 +76,8 @@ const Chatbot = () => {
     ];
 
     // Agent action templates: { label, fill, send }
-    // fill=true → fills input (user can edit before sending)
-    // send=true → sends immediately
+    // fill → fills input (user can edit before sending)
+    // send → sends immediately
     const actionButtons = [
         { icon: '🛒', label: 'Add movie to cart',    template: 'Add [movie] to my cart',    fill: 'Add  to my cart', cursor: 4 },
         { icon: '🗑️', label: 'Remove from cart',     template: 'Remove [movie] from my cart', fill: 'Remove  from my cart', cursor: 7 },
@@ -180,7 +204,6 @@ const Chatbot = () => {
             if (!response.ok) throw new Error('Network response was not ok');
 
             const data = await response.json();
-            console.log('[Chatbot] response:', JSON.stringify(data));
             const botMessage = {
                 text: data.answer,
                 sender: "bot",
@@ -200,34 +223,49 @@ const Chatbot = () => {
         }
     };
 
-    const handleKeyPress = (e) => {
+    const handleKeyDown = (e) => {
         if (e.key === 'Enter' && input.trim() && !loading) sendMessage(input);
     };
+
+    const headerIconButton = "flex size-8 cursor-pointer items-center justify-center rounded-md text-primary-foreground/80 transition-colors hover:bg-black/10 hover:text-primary-foreground";
 
     return (
         <>
             {/* Floating bubble */}
             {!isOpen && (
-                <button className="chatbot-bubble" onClick={() => setIsOpen(true)} aria-label="Open chat">
-                    💬 How can I help?
+                <button
+                    className="fixed right-5 bottom-5 z-50 flex cursor-pointer items-center gap-2 rounded-full bg-primary py-3 pr-5 pl-4 font-semibold text-primary-foreground shadow-2xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:shadow-primary/50"
+                    onClick={() => setIsOpen(true)}
+                    aria-label="Open chat"
+                >
+                    <MessageCircle className="size-5" />
+                    <span className="hidden sm:inline">How can I help?</span>
                 </button>
             )}
 
             {/* Chat window */}
             {isOpen && (
-                <div className="chatbot-window">
+                <div className="fixed inset-x-3 bottom-3 z-50 flex h-[min(640px,calc(100dvh-1.5rem))] animate-in flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-2xl duration-200 fade-in slide-in-from-bottom-4 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px]">
                     {/* Header */}
-                    <div className="chatbot-header">
-                        <div>
-                            <h5 className="mb-0">🎬 MovieShop Assistant</h5>
-                            <small>Usually responds in 1 minute</small>
+                    <div className="flex items-center justify-between gap-2 bg-primary px-4 py-3 text-primary-foreground">
+                        <div className="flex items-center gap-3">
+                            <span className="flex size-9 items-center justify-center rounded-full bg-black/15">
+                                <Clapperboard className="size-5" />
+                            </span>
+                            <div>
+                                <h2 className="leading-tight font-semibold">MovieShop Assistant</h2>
+                                <p className="flex items-center gap-1.5 text-xs opacity-80">
+                                    <span className="size-1.5 rounded-full bg-emerald-600" />
+                                    Usually responds in 1 minute
+                                </p>
+                            </div>
                         </div>
-                        <div className="chatbot-header-actions">
+                        <div className="flex items-center gap-0.5">
                             {/* Language toggle */}
                             <button
                                 onClick={toggleLang}
                                 title={`Switch to ${lang === 'en-US' ? 'Hungarian' : 'English'}`}
-                                className="lang-btn"
+                                className={cn(headerIconButton, "w-auto px-2 text-xs font-bold")}
                             >
                                 {lang === 'en-US' ? 'EN' : 'HU'}
                             </button>
@@ -237,155 +275,183 @@ const Chatbot = () => {
                                     onClick={toggleTts}
                                     aria-label={ttsEnabled ? "Disable voice" : "Enable voice"}
                                     title={ttsEnabled ? "Voice responses: ON" : "Voice responses: OFF"}
-                                    className={ttsEnabled ? 'tts-active' : ''}
+                                    className={cn(headerIconButton, ttsEnabled && "bg-black/15 text-primary-foreground")}
                                 >
-                                    {ttsEnabled ? '🔊' : '🔇'}
+                                    {ttsEnabled ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
                                 </button>
                             )}
-                            <button onClick={() => { setIsOpen(false); window.speechSynthesis?.cancel(); }} aria-label="Close chat">
-                                ✕
+                            <button
+                                onClick={() => { setIsOpen(false); window.speechSynthesis?.cancel(); }}
+                                aria-label="Close chat"
+                                className={headerIconButton}
+                            >
+                                <X className="size-4" />
                             </button>
                         </div>
                     </div>
 
                     {/* Messages */}
-                    <div className="chatbot-messages">
+                    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-background/40 px-4 py-4">
                         {messages.map((msg, idx) => (
-                            <div key={idx} className={`message ${msg.sender}`}>
-                                <div className="message-bubble">
+                            <div key={idx} className={cn("flex", msg.sender === 'user' ? "justify-end" : "justify-start")}>
+                                <div className={cn(
+                                    "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-line",
+                                    msg.sender === 'user'
+                                        ? "rounded-br-sm bg-primary text-primary-foreground"
+                                        : "rounded-bl-sm border bg-card text-card-foreground"
+                                )}>
                                     {msg.text}
-                                    {msg.source && (
-                                        <small className="message-source">
-                                            {msg.source === 'FAQ' ? '📚 FAQ' : msg.source === 'agent' ? '⚡ Agent' : '🤖 AI'}
-                                        </small>
-                                    )}
+                                    {msg.source && <SourceTag source={msg.source} />}
                                     {msg.action?.type === 'cart_updated' && (
                                         <div className="mt-2">
-                                            <a href="/cart" className="btn btn-sm btn-outline-primary">🛒 View Cart</a>
+                                            <Button size="sm" variant="outline" onClick={() => navigate('/cart')}>
+                                                <ShoppingCart /> View Cart
+                                            </Button>
                                         </div>
                                     )}
                                     {msg.action?.type === 'navigate' && (
-                                        <small className="message-source">↗ Navigating...</small>
+                                        <span className="mt-1 flex items-center gap-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                                            <ArrowUpRight className="size-3" /> Navigating...
+                                        </span>
                                     )}
                                 </div>
                             </div>
                         ))}
                         {loading && (
-                            <div className="message bot">
-                                <div className="message-bubble">
-                                    <div className="typing-indicator">
-                                        <span></span><span></span><span></span>
-                                    </div>
+                            <div className="flex justify-start">
+                                <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border bg-card px-4 py-3" aria-label="Typing">
+                                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+                                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+                                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground" />
                                 </div>
                             </div>
                         )}
+                        <div ref={messagesEndRef} />
                     </div>
 
                     {/* Quick actions panel */}
-                    <div className="chatbot-faq">
-                        <div className="chatbot-tabs">
+                    <div className="border-t bg-card/60 px-3 pt-2 pb-3">
+                        <div className="mb-2 flex gap-1">
                             <button
-                                className={`chatbot-tab ${activeTab === 'faq' ? 'active' : ''}`}
+                                className={cn(
+                                    "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                                    activeTab === 'faq' ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+                                )}
                                 onClick={() => setActiveTab('faq')}
                             >
-                                💬 FAQ
+                                <BookOpen className="size-3.5" /> FAQ
                             </button>
                             {token && (
                                 <button
-                                    className={`chatbot-tab ${activeTab === 'actions' ? 'active' : ''}`}
+                                    className={cn(
+                                        "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                                        activeTab === 'actions' ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+                                    )}
                                     onClick={() => setActiveTab('actions')}
                                 >
-                                    ⚡ Actions
+                                    <Zap className="size-3.5" /> Actions
                                 </button>
                             )}
                         </div>
 
-                        {activeTab === 'faq' && faqButtons.map((q, idx) => (
-                            <button
-                                key={idx}
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => sendMessage(q)}
-                                disabled={loading}
-                            >
-                                {q}
-                            </button>
-                        ))}
-
-                        {activeTab === 'actions' && token && (
-                            <div className="action-buttons">
-                                {actionButtons.map((a, idx) => (
+                        {activeTab === 'faq' && (
+                            <div className="scrollbar-none flex gap-1.5 overflow-x-auto">
+                                {faqButtons.map((q, idx) => (
                                     <button
                                         key={idx}
-                                        className="btn btn-sm btn-outline-secondary action-btn"
+                                        className="shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs whitespace-nowrap text-foreground/85 transition-colors hover:border-primary/60 hover:text-foreground disabled:opacity-50"
+                                        onClick={() => sendMessage(q)}
                                         disabled={loading}
-                                        onClick={() => {
-                                            if (a.send) {
-                                                sendMessage(a.send);
-                                            } else {
-                                                setInput(a.fill);
-                                                setTimeout(() => {
-                                                    const inp = document.querySelector('.chatbot-input input');
-                                                    if (inp) {
-                                                        inp.focus();
-                                                        if (a.cursor != null) inp.setSelectionRange(a.cursor, a.cursor);
-                                                    }
-                                                }, 50);
-                                            }
-                                        }}
-                                        title={a.template ?? a.send}
                                     >
-                                        {a.icon} {a.label}
-                                        {a.fill && <span className="action-hint"> →</span>}
+                                        {q}
                                     </button>
                                 ))}
-                                <small className="text-muted mt-2 d-block">
-                                    → fills input &nbsp;|&nbsp; no arrow = sends directly
-                                </small>
                             </div>
+                        )}
+
+                        {activeTab === 'actions' && token && (
+                            <>
+                                <div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
+                                    {actionButtons.map((a, idx) => (
+                                        <button
+                                            key={idx}
+                                            className="cursor-pointer rounded-full border px-2.5 py-1 text-xs whitespace-nowrap text-foreground/85 transition-colors hover:border-primary/60 hover:text-foreground disabled:opacity-50"
+                                            disabled={loading}
+                                            onClick={() => {
+                                                if (a.send) {
+                                                    sendMessage(a.send);
+                                                } else {
+                                                    setInput(a.fill);
+                                                    setTimeout(() => {
+                                                        const inp = inputRef.current;
+                                                        if (inp) {
+                                                            inp.focus();
+                                                            if (a.cursor != null) inp.setSelectionRange(a.cursor, a.cursor);
+                                                        }
+                                                    }, 50);
+                                                }
+                                            }}
+                                            title={a.template ?? a.send}
+                                        >
+                                            {a.icon} {a.label}
+                                            {a.fill && <span className="text-primary"> →</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="mt-1.5 text-[10px] text-muted-foreground">
+                                    → fills input &nbsp;|&nbsp; no arrow = sends directly
+                                </p>
+                            </>
                         )}
                     </div>
 
+                    {/* Listening status bar */}
+                    {isListening && (
+                        <div className="flex items-center gap-2 bg-destructive/15 px-4 py-1.5 text-xs font-medium text-destructive">
+                            <span className="size-2 animate-ping rounded-full bg-destructive" />
+                            Listening... speak now
+                        </div>
+                    )}
+
                     {/* Input area */}
-                    <div className="chatbot-input">
+                    <div className="flex items-center gap-2 border-t p-3">
                         <input
+                            ref={inputRef}
                             type="text"
+                            className="h-10 min-w-0 flex-1 rounded-full border border-input bg-background px-4 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 dark:bg-input/30"
                             placeholder={isListening ? "Listening..." : "Ask a question..."}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
+                            onKeyDown={handleKeyDown}
                             disabled={loading || isListening}
                         />
 
                         {/* Microphone button */}
                         {speechSupported && (
-                            <button
-                                className={`mic-btn ${isListening ? 'listening' : ''}`}
+                            <Button
+                                variant={isListening ? "destructive" : "ghost"}
+                                size="icon"
+                                className={cn("rounded-full", isListening && "animate-pulse")}
                                 onClick={isListening ? stopListening : startListening}
                                 disabled={loading}
                                 aria-label={isListening ? "Stop listening" : "Start voice input"}
                                 title={isListening ? "Click to stop" : "Voice input"}
                             >
-                                🎤
-                            </button>
+                                {isListening ? <MicOff /> : <Mic />}
+                            </Button>
                         )}
 
                         {/* Send button */}
-                        <button
+                        <Button
+                            size="icon"
+                            className="rounded-full"
                             onClick={() => input.trim() && sendMessage(input)}
                             disabled={loading || !input.trim() || isListening}
                             aria-label="Send message"
                         >
-                            ➤
-                        </button>
+                            <SendHorizontal />
+                        </Button>
                     </div>
-
-                    {/* Listening status bar */}
-                    {isListening && (
-                        <div className="listening-bar">
-                            <span className="listening-dot" />
-                            Listening... speak now
-                        </div>
-                    )}
                 </div>
             )}
         </>

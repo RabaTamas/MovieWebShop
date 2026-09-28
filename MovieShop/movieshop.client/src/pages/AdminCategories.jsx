@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
+import { AlertCircle, Check, FolderTree, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 import API_BASE_URL from "../config/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LoadingState, Spinner } from "@/components/ui/spinner";
+import { PageContainer, PageHeader } from "@/components/ui/page";
 
 const AdminCategories = () => {
     const { token } = useAuth();
@@ -134,8 +142,6 @@ const AdminCategories = () => {
         setDeletingId(id);
         setError(null);
         try {
-            console.log(`Attempting to delete category with ID: ${id}`);
-
             const response = await fetch(`${API_BASE_URL}/api/category/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -152,7 +158,7 @@ const AdminCategories = () => {
                     if (errorText) {
                         errorMessage = `Error ${response.status}: ${errorText}`;
                     }
-                } catch (e) {
+                } catch {
                     // If we can't read the response text, use the default message
                 }
 
@@ -165,7 +171,6 @@ const AdminCategories = () => {
 
             // Remove the deleted category from the state
             setCategories(categories.filter(cat => cat.id !== id));
-            console.log(`Successfully deleted category with ID: ${id}`);
         } catch (err) {
             console.error("Failed to delete category:", err);
             setError(`Failed to delete category: ${err.message}`);
@@ -175,157 +180,136 @@ const AdminCategories = () => {
     };
 
     if (loading) {
-        return (
-            <div className="container mt-4">
-                <div className="d-flex align-items-center">
-                    <div className="spinner-border me-2" role="status"></div>
-                    <span>Loading categories...</span>
-                </div>
-            </div>
-        );
+        return <LoadingState label="Loading categories..." />;
     }
 
     return (
-        <div className="container mt-4">
-            <h1 className="mb-4">Manage Categories</h1>
+        <PageContainer size="lg" className="max-w-4xl">
+            <PageHeader title="Manage Categories" icon={FolderTree} />
 
-            {/* Error Alert */}
-            {error && (
-                <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                    {error}
-                    <button
-                        type="button"
-                        className="btn-close"
-                        onClick={() => setError(null)}
-                        aria-label="Close"
-                    ></button>
-                </div>
-            )}
-
-            {/* Add New Category Form */}
-            <div className="card mb-4">
-                <div className="card-header">
-                    <h5 className="card-title mb-0">Add New Category</h5>
-                </div>
-                <div className="card-body">
-                    <form onSubmit={handleAddCategory} className="d-flex">
-                        <input
-                            type="text"
-                            className="form-control me-2"
-                            placeholder="Category name"
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            required
-                        />
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={saving || !newCategory.trim()}
-                        >
-                            {saving ? (
-                                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                            ) : (
-                                <i className="bi bi-plus-circle me-1"></i>
-                            )}
-                            Add
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {/* Edit Category Form - shown only when editing */}
-            {editingCategory && (
-                <div className="card mb-4">
-                    <div className="card-header d-flex justify-content-between align-items-center">
-                        <h5 className="card-title mb-0">Edit Category</h5>
+            <div className="space-y-6">
+                {/* Error Alert */}
+                {error && (
+                    <Alert variant="destructive" className="pr-10">
+                        <AlertCircle />
+                        <AlertDescription>{error}</AlertDescription>
                         <button
                             type="button"
-                            className="btn-close"
+                            className="absolute top-2.5 right-2.5 cursor-pointer rounded p-1 opacity-70 hover:opacity-100"
+                            onClick={() => setError(null)}
                             aria-label="Close"
-                            onClick={() => setEditingCategory(null)}
-                        ></button>
-                    </div>
-                    <div className="card-body">
-                        <form onSubmit={handleUpdateCategory} className="d-flex">
-                            <input
-                                type="text"
-                                className="form-control me-2"
-                                value={editingCategory.name}
-                                onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                                required
-                            />
-                            <button
-                                type="submit"
-                                className="btn btn-success"
-                                disabled={saving || !editingCategory.name.trim()}
-                            >
-                                {saving ? (
-                                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                ) : (
-                                    <i className="bi bi-check-circle me-1"></i>
-                                )}
-                                Save
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            )}
+                        >
+                            <X className="size-4" />
+                        </button>
+                    </Alert>
+                )}
 
-            {/* Categories List */}
-            <div className="card">
-                <div className="card-header">
-                    <h5 className="card-title mb-0">All Categories ({categories.length})</h5>
+                {/* Add / Edit Category Form */}
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="gap-4">
+                        <CardHeader>
+                            <CardTitle>Add New Category</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleAddCategory} className="flex gap-2">
+                                <Input
+                                    type="text"
+                                    placeholder="Category name"
+                                    value={newCategory}
+                                    onChange={(e) => setNewCategory(e.target.value)}
+                                    required
+                                />
+                                <Button type="submit" disabled={saving || !newCategory.trim()}>
+                                    {saving ? <Spinner /> : <Plus />}
+                                    Add
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+
+                    {/* Edit Category Form - shown only when editing */}
+                    {editingCategory && (
+                        <Card className="gap-4 border-primary/40">
+                            <CardHeader>
+                                <CardTitle>Edit Category</CardTitle>
+                                <CardAction>
+                                    <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={() => setEditingCategory(null)}>
+                                        <X />
+                                    </Button>
+                                </CardAction>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleUpdateCategory} className="flex gap-2">
+                                    <Input
+                                        type="text"
+                                        value={editingCategory.name}
+                                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                                        autoFocus
+                                        required
+                                    />
+                                    <Button type="submit" variant="success" disabled={saving || !editingCategory.name.trim()}>
+                                        {saving ? <Spinner /> : <Check />}
+                                        Save
+                                    </Button>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
-                <div className="card-body">
-                    {categories.length === 0 ? (
-                        <p className="text-muted">No categories found</p>
-                    ) : (
-                        <div className="table-responsive">
-                            <table className="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+
+                {/* Categories List */}
+                <Card className="gap-4">
+                    <CardHeader>
+                        <CardTitle>All Categories ({categories.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {categories.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No categories found</p>
+                        ) : (
+                            <Table containerClassName="rounded-lg border">
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="w-20">ID</TableHead>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {categories.map(category => (
-                                        <tr key={category.id}>
-                                            <td>{category.id}</td>
-                                            <td>{category.name}</td>
-                                            <td>
-                                                <div className="btn-group">
-                                                    <button
-                                                        className="btn btn-sm btn-outline-primary"
+                                        <TableRow key={category.id}>
+                                            <TableCell className="text-muted-foreground">{category.id}</TableCell>
+                                            <TableCell className="font-medium">{category.name}</TableCell>
+                                            <TableCell>
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         onClick={() => handleEditCategory(category)}
                                                         disabled={editingCategory !== null || deletingId === category.id}
                                                     >
-                                                        <i className="bi bi-pencil"></i> Edit
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-sm btn-outline-danger"
+                                                        <Pencil /> Edit
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-destructive hover:text-destructive"
                                                         onClick={() => handleDeleteCategory(category.id)}
                                                         disabled={deletingId === category.id}
                                                     >
-                                                        {deletingId === category.id ? (
-                                                            <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                                        ) : (
-                                                            <i className="bi bi-trash"></i>
-                                                        )}
+                                                        {deletingId === category.id ? <Spinner /> : <Trash2 />}
                                                         Delete
-                                                    </button>
+                                                    </Button>
                                                 </div>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
-        </div>
+        </PageContainer>
     );
 };
 

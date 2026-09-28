@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { GoogleLogin } from '@react-oauth/google';
+import { AlertCircle, ArrowLeft, LogIn, ShieldCheck } from 'lucide-react';
 import API_BASE_URL from '../config/api';
+import AuthLayout from '../components/AuthLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Spinner } from '@/components/ui/spinner';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -17,6 +25,7 @@ const Login = () => {
 
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { theme } = useTheme();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -97,117 +106,118 @@ const Login = () => {
         }
     };
 
+    const errorAlert = error && (
+        <Alert variant="destructive" className="mb-5">
+            <AlertCircle />
+            <AlertDescription>{error}</AlertDescription>
+        </Alert>
+    );
+
     // --- 2FA step ---
     if (twoFactorRequired) {
         return (
-            <div className="container mt-5">
-                <div className="row justify-content-center">
-                    <div className="col-md-5">
-                        <div className="card shadow-sm">
-                            <div className="card-body p-4">
-                                <div className="text-center mb-4">
-                                    <i className="bi bi-shield-lock fs-1 text-primary"></i>
-                                    <h4 className="mt-2">Two-Factor Authentication</h4>
-                                    <p className="text-muted small">Open your authenticator app and enter the 6-digit code.</p>
-                                </div>
+            <AuthLayout
+                icon={ShieldCheck}
+                title="Two-Factor Authentication"
+                description="Open your authenticator app and enter the 6-digit code."
+            >
+                {errorAlert}
 
-                                {error && <div className="alert alert-danger">{error}</div>}
-
-                                <form onSubmit={handleTwoFactorSubmit}>
-                                    <div className="mb-3">
-                                        <label className="form-label">Authentication Code</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-lg text-center"
-                                            placeholder="000000"
-                                            maxLength={6}
-                                            value={twoFactorCode}
-                                            onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                                            autoFocus
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                    <button type="submit" className="btn btn-primary w-100" disabled={loading || twoFactorCode.length !== 6}>
-                                        {loading ? 'Verifying...' : 'Verify'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link w-100 mt-2"
-                                        onClick={() => { setTwoFactorRequired(false); setError(''); }}
-                                    >
-                                        ← Back to login
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                <form onSubmit={handleTwoFactorSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                        <Label htmlFor="twofactor-code">Authentication Code</Label>
+                        <Input
+                            id="twofactor-code"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            className="h-14 text-center font-mono text-2xl tracking-[0.5em] md:text-2xl"
+                            placeholder="000000"
+                            maxLength={6}
+                            value={twoFactorCode}
+                            onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                            autoFocus
+                            disabled={loading}
+                        />
                     </div>
-                </div>
-            </div>
+                    <Button type="submit" size="lg" className="w-full" disabled={loading || twoFactorCode.length !== 6}>
+                        {loading && <Spinner />}
+                        {loading ? 'Verifying...' : 'Verify'}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => { setTwoFactorRequired(false); setError(''); }}
+                    >
+                        <ArrowLeft /> Back to login
+                    </Button>
+                </form>
+            </AuthLayout>
         );
     }
 
     // --- Normal login ---
     return (
-        <div className="container mt-5">
-            <div className="row justify-content-center">
-                <div className="col-md-6">
-                    <h2 className="text-center mb-4">Login</h2>
+        <AuthLayout icon={LogIn} title="Login" description="Welcome back! Sign in to continue watching.">
+            {errorAlert}
 
-                    {error && <div className="alert alert-danger">{error}</div>}
-
-                    <form onSubmit={handleSubmit}>
-                        <div className="mb-3">
-                            <label className="form-label" htmlFor="email">Email</label>
-                            <input
-                                type="email"
-                                className="form-control"
-                                id="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={loading}
-                                required
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label" htmlFor="password">Password</label>
-                            <input
-                                type="password"
-                                className="form-control"
-                                id="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={loading}
-                                required
-                            />
-                        </div>
-
-                        <button type="submit" className="btn btn-primary w-100 mb-3" disabled={loading}>
-                            {loading ? 'Logging in...' : 'Login'}
-                        </button>
-                    </form>
-
-                    <div className="text-center mb-3">
-                        <hr className="my-4" />
-                        <p className="text-muted">Or continue with</p>
-                    </div>
-
-                    <div className="d-flex justify-content-center">
-                        <GoogleLogin
-                            onSuccess={handleGoogleSuccess}
-                            onError={() => setError('Google login failed. Please try again.')}
-                            theme="outline"
-                            size="large"
-                            text="continue_with"
-                        />
-                    </div>
-
-                    <div className="mt-4 text-center">
-                        Don't have an account? <a href="/register">Register here</a>
-                    </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                        type="email"
+                        id="email"
+                        autoComplete="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        required
+                    />
                 </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                        type="password"
+                        id="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        required
+                    />
+                </div>
+
+                <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                    {loading && <Spinner />}
+                    {loading ? 'Logging in...' : 'Login'}
+                </Button>
+            </form>
+
+            <div className="my-6 flex items-center gap-3 text-xs tracking-wider text-muted-foreground uppercase">
+                <span className="h-px flex-1 bg-border" />
+                Or continue with
+                <span className="h-px flex-1 bg-border" />
             </div>
-        </div>
+
+            <div className="flex justify-center">
+                <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setError('Google login failed. Please try again.')}
+                    theme={theme === 'dark' ? 'filled_black' : 'outline'}
+                    size="large"
+                    shape="pill"
+                    text="continue_with"
+                />
+            </div>
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link to="/register" className="font-medium text-primary hover:underline">Register here</Link>
+            </p>
+        </AuthLayout>
     );
 };
 

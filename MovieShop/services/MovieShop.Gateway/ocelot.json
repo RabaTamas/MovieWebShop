@@ -1,0 +1,277 @@
+{
+  "//": [
+    "API Gateway útvonaltábla.",
+    "",
+    "A frontend számára a mikroszervizes rendszer EGYETLEN címen jelenik meg,",
+    "ugyanazokkal az útvonalakkal, mint a monolitban. Emiatt a React kliens",
+    "kódját nem kellett módosítani — csak a VITE_API_URL mutat a gatewayre.",
+    "",
+    "FONTOS: az /api/internal/* útvonalak szándékosan HIÁNYOZNAK innen.",
+    "Azok a service-ek közötti kommunikációra valók, és csak a belső Docker",
+    "hálózatról érhetők el — a gateway nem teszi közzé őket kifelé."
+  ],
+
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:5200"
+  },
+
+  "Routes": [
+    {
+      "//": "── User Service ─────────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Auth/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Auth/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "userservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/User/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/User/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "userservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Push/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Push/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "userservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Address/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Address/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "userservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Address",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Address",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "userservice", "Port": 8080 } ]
+    },
+    {
+      "//": "Magasabb prioritás, hogy megelőzze az általánosabb admin mintákat",
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/addresses/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/admin/addresses/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "userservice", "Port": 8080 } ]
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/addresses",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/admin/addresses",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "userservice", "Port": 8080 } ]
+    },
+
+    {
+      "//": "── Catalog Service ──────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Movie/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Movie/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Movie",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Movie",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Category/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Category/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Category",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Category",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Review/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Review/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Review",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Review",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Search/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Search/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Search",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Search",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "//": "Videófeltöltés: 500 MB-os fájlok, ezért hosszabb időtúllépés kell",
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/Video/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/admin/Video/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ],
+      "QoSOptions": {
+        "TimeoutValue": 600000,
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 10000
+      }
+    },
+
+    {
+      "//": "── Order Service ────────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Order/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Order/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Order",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Order",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/ShoppingCart/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/ShoppingCart/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/ShoppingCart",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/ShoppingCart",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Payment/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Payment/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Recommendation",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Recommendation",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/Orders/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/admin/Orders/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/Orders",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/admin/Orders",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/shopping-carts/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/admin/shopping-carts/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "orderservice", "Port": 8080 } ]
+    },
+
+    {
+      "//": "── Auction Service ──────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Auction/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Auction/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "auctionservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/Auction",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Auction",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "auctionservice", "Port": 8080 } ]
+    },
+    {
+      "//": [
+        "SignalR két lépésben csatlakozik: előbb egy HTTP POST /negotiate,",
+        "utána a WebSocket upgrade. Mindkettőt külön útvonalként kell átengedni,",
+        "és a negotiate-nek magasabb prioritás kell, hogy ne a ws-route nyelje el."
+      ],
+      "Priority": 10,
+      "UpstreamPathTemplate": "/hubs/auction/negotiate",
+      "UpstreamHttpMethod": [ "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/hubs/auction/negotiate",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "auctionservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/hubs/auction",
+      "DownstreamPathTemplate": "/hubs/auction",
+      "DownstreamScheme": "ws",
+      "DownstreamHostAndPorts": [ { "Host": "auctionservice", "Port": 8080 } ]
+    },
+    {
+      "//": "Watch Party hub — a Catalog Service-ben él, mert a lejátszáshoz tartozik",
+      "Priority": 10,
+      "UpstreamPathTemplate": "/hubs/watchparty/negotiate",
+      "UpstreamHttpMethod": [ "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/hubs/watchparty/negotiate",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/hubs/watchparty",
+      "DownstreamPathTemplate": "/hubs/watchparty",
+      "DownstreamScheme": "ws",
+      "DownstreamHostAndPorts": [ { "Host": "catalogservice", "Port": 8080 } ]
+    },
+
+    {
+      "//": "── Chat Service ─────────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Chat/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/Chat/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "chatservice", "Port": 8080 } ],
+      "QoSOptions": {
+        "TimeoutValue": 90000,
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 10000
+      }
+    }
+  ]
+}

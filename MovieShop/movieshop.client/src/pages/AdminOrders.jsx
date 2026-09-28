@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, ChevronRight, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../services/orderService';
+import OrderStatusBadge from '../components/OrderStatusBadge';
+import { formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LoadingState } from '@/components/ui/spinner';
+import { PageContainer, PageHeader } from '@/components/ui/page';
+
+export const ORDER_STATUSES = ['Pending', 'Completed', 'Failed', 'Cancelled', 'Refunded'];
 
 const AdminOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -45,111 +58,86 @@ const AdminOrders = () => {
         return date.toLocaleDateString();
     };
 
-    if (loading) return <div className="p-4">Loading orders...</div>;
-    if (error) return <div className="p-4 text-red-500">{error}</div>;
-
     return (
-        <div className="p-4">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Manage Orders</h1>
-                <Link to="/admin/dashboard" className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">
-                    Back to Dashboard
-                </Link>
-            </div>
+        <PageContainer size="xl">
+            <PageHeader title="Manage Orders" icon={Package}>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="statusFilter" className="whitespace-nowrap text-muted-foreground">
+                        Filter by Status:
+                    </Label>
+                    <NativeSelect
+                        id="statusFilter"
+                        value={statusFilter}
+                        onChange={handleStatusChange}
+                        containerClassName="w-44"
+                    >
+                        <option value="">All Orders</option>
+                        {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </NativeSelect>
+                </div>
+            </PageHeader>
 
-            <div className="mb-6">
-                <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700">
-                    Filter by Status:
-                </label>
-                <select
-                    id="statusFilter"
-                    value={statusFilter}
-                    onChange={handleStatusChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                >
-                    <option value="">All Orders</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Processing">Processing</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Refunded">Refunded</option>
-                </select>
-            </div>
-
-            <div className="overflow-x-auto bg-white rounded-lg shadow">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Order ID
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Customer
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Total
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {orders.length > 0 ? (
-                            orders.map((order) => (
-                                <tr key={order.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">#{order.id}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-500">{formatDate(order.orderDate)}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{order.userName}</div>
-                                        <div className="text-sm text-gray-500">{order.userEmail}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{order.totalPrice} Ft</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                   ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                                                    order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-800' :
-                                                        order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                                                            order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                                                                'bg-gray-100 text-gray-800'}`}>
-                                            {order.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button
-                                            onClick={() => navigate(`/admin/orders/${order.id}`)}
-                                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                        >
-                                            View Details
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                                    No orders found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+            {loading ? (
+                <LoadingState label="Loading orders..." className="min-h-[30vh]" />
+            ) : error ? (
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            ) : (
+                <Card className="py-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead>Order ID</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Total</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {orders.length > 0 ? (
+                                orders.map((order) => (
+                                    <TableRow
+                                        key={order.id}
+                                        className="cursor-pointer"
+                                        onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                    >
+                                        <TableCell className="font-medium">#{order.id}</TableCell>
+                                        <TableCell className="text-muted-foreground">{formatDate(order.orderDate)}</TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">{order.userName}</div>
+                                            <div className="text-xs text-muted-foreground">{order.userEmail}</div>
+                                        </TableCell>
+                                        <TableCell className="font-semibold whitespace-nowrap">{formatPrice(order.totalPrice)}</TableCell>
+                                        <TableCell>
+                                            <OrderStatusBadge status={order.status} />
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => { e.stopPropagation(); navigate(`/admin/orders/${order.id}`); }}
+                                            >
+                                                View Details <ChevronRight />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                                        No orders found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </Card>
+            )}
+        </PageContainer>
     );
 };
 

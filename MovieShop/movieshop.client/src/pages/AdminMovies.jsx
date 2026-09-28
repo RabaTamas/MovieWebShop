@@ -1,8 +1,24 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { AlertCircle, Film, FileVideo, Pencil, Plus, RefreshCw, RotateCcw, Tags, Trash2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 import API_BASE_URL from "../config/api";
+import { cn, formatPrice } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LoadingState } from "@/components/ui/spinner";
+import { EmptyState, PageContainer, PageHeader } from "@/components/ui/page";
+
+const viewTabs = [
+    { key: "active", label: "Active Movies" },
+    { key: "deleted", label: "Deleted Movies" },
+    { key: "all", label: "All Movies" },
+];
 
 const AdminMovies = () => {
     const { token } = useAuth();
@@ -22,7 +38,7 @@ const AdminMovies = () => {
                 // Select endpoint based on view mode
                 switch (viewMode) {
                     case "deleted":
-                        endpoint = `${API_BASE_URL}/movie/admin/deleted`;
+                        endpoint = `${API_BASE_URL}/api/movie/admin/deleted`;
                         break;
                     case "all":
                         endpoint = `${API_BASE_URL}/api/movie/admin/all`;
@@ -94,7 +110,7 @@ const AdminMovies = () => {
 
             // Successfully deleted - remove the movie from the active list
             setMovies(movies.filter(movie => movie.id !== id));
-            alert("Movie deleted successfully. You can find it in the 'Deleted Movies' view.");
+            toast.success("Movie deleted successfully. You can find it in the 'Deleted Movies' view.");
         } catch (err) {
             console.error("Failed to delete movie:", err);
             setError(`Failed to delete movie: ${err.message}`);
@@ -118,7 +134,7 @@ const AdminMovies = () => {
 
             // Successfully restored - remove from deleted list
             setDeletedMovies(deletedMovies.filter(movie => movie.id !== id));
-            alert("Movie restored successfully!");
+            toast.success("Movie restored successfully!");
         } catch (err) {
             console.error("Failed to restore movie:", err);
             setError(`Failed to restore movie: ${err.message}`);
@@ -127,17 +143,17 @@ const AdminMovies = () => {
 
     const handleApiError = async (response, action) => {
         if (response.status === 401) {
-            alert("Unauthorized. Please check your admin permissions.");
+            toast.error("Unauthorized. Please check your admin permissions.");
             return;
         }
 
         if (response.status === 403) {
-            alert(`Forbidden. You don't have permission to ${action} movies.`);
+            toast.error(`Forbidden. You don't have permission to ${action} movies.`);
             return;
         }
 
         if (response.status === 404) {
-            alert("Movie was not found on server. Refreshing view...");
+            toast.error("Movie was not found on server. Refreshing view...");
             // Refresh the current view
             setViewMode(prevMode => prevMode);
             return;
@@ -148,23 +164,19 @@ const AdminMovies = () => {
         throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
     };
 
-    if (loading) {
-        return <div className="container mt-4"><div className="spinner-border" role="status"></div> Loading movies...</div>;
-    }
-
     if (error) {
         return (
-            <div className="container mt-4">
-                <div className="alert alert-danger">
-                    Error: {error}
-                    <button
-                        className="btn btn-sm btn-outline-secondary ms-2"
-                        onClick={() => window.location.reload()}
-                    >
-                        Refresh Page
-                    </button>
-                </div>
-            </div>
+            <PageContainer size="md">
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription>
+                        <span>Error: {error}</span>
+                        <Button size="sm" variant="outline" className="mt-2" onClick={() => window.location.reload()}>
+                            <RefreshCw /> Refresh Page
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            </PageContainer>
         );
     }
 
@@ -173,132 +185,120 @@ const AdminMovies = () => {
     const isDeletedView = viewMode === "deleted";
 
     return (
-        <div className="container mt-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1>Manage Movies</h1>
-                <Link to="/admin/movies/add" className="btn btn-primary">
-                    <i className="bi bi-plus-circle me-2"></i>Add New Movie
-                </Link>
-            </div>
+        <PageContainer size="xl">
+            <PageHeader title="Manage Movies" icon={Film}>
+                <Button asChild>
+                    <Link to="/admin/movies/add"><Plus />Add New Movie</Link>
+                </Button>
+            </PageHeader>
 
             {/* View selector tabs */}
-            <ul className="nav nav-tabs mb-4">
-                <li className="nav-item">
+            <div className="mb-6 inline-flex rounded-lg bg-muted p-1" role="tablist">
+                {viewTabs.map(tab => (
                     <button
-                        className={`nav-link ${viewMode === "active" ? "active" : ""}`}
-                        onClick={() => setViewMode("active")}
+                        key={tab.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={viewMode === tab.key}
+                        className={cn(
+                            "cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                            viewMode === tab.key ? "bg-background text-foreground shadow-sm dark:bg-input/40" : "text-muted-foreground hover:text-foreground"
+                        )}
+                        onClick={() => setViewMode(tab.key)}
                     >
-                        Active Movies
+                        {tab.label}
                     </button>
-                </li>
-                <li className="nav-item">
-                    <button
-                        className={`nav-link ${viewMode === "deleted" ? "active" : ""}`}
-                        onClick={() => setViewMode("deleted")}
-                    >
-                        Deleted Movies
-                    </button>
-                </li>
-                <li className="nav-item">
-                    <button
-                        className={`nav-link ${viewMode === "all" ? "active" : ""}`}
-                        onClick={() => setViewMode("all")}
-                    >
-                        All Movies
-                    </button>
-                </li>
-            </ul>
+                ))}
+            </div>
 
-            {displayedMovies.length === 0 ? (
-                <div className="alert alert-info">
-                    {isDeletedView
-                        ? "No deleted movies found."
-                        : viewMode === "active"
-                            ? <>No active movies found. <Link to="/admin/movies/add">Add your first movie</Link></>
-                            : "No movies found."
-                    }
-                </div>
+            {loading ? (
+                <LoadingState label="Loading movies..." className="min-h-[30vh]" />
+            ) : displayedMovies.length === 0 ? (
+                <EmptyState
+                    icon={Film}
+                    title={isDeletedView ? "No deleted movies found." : viewMode === "active" ? "No active movies found." : "No movies found."}
+                >
+                    {viewMode === "active" && (
+                        <Button asChild><Link to="/admin/movies/add">Add your first movie</Link></Button>
+                    )}
+                </EmptyState>
             ) : (
-                <div className="table-responsive">
-                    <table className="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Image</th>
-                                <th>Title</th>
-                                <th>Price</th>
-                                <th>Discounted Price</th>
-                                {viewMode === "all" && <th>Status</th>}
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <Card className="py-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead className="w-14">ID</TableHead>
+                                <TableHead className="w-16">Image</TableHead>
+                                <TableHead>Title</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead>Discounted Price</TableHead>
+                                {viewMode === "all" && <TableHead>Status</TableHead>}
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {displayedMovies.map(movie => (
-                                <tr key={movie.id} className={movie.isDeleted ? "table-danger" : ""}>
-                                    <td>{movie.id}</td>
-                                    <td>
+                                <TableRow key={movie.id} className={cn(movie.isDeleted && "bg-destructive/5")}>
+                                    <TableCell className="text-muted-foreground">{movie.id}</TableCell>
+                                    <TableCell>
                                         <img
                                             src={movie.imageUrl}
                                             alt={movie.title}
-                                            style={{ width: '50px', height: '70px', objectFit: 'cover' }}
+                                            className="h-16 w-11 rounded object-cover ring-1 ring-border"
                                             onError={(e) => {
-                                                e.target.src = '/api/placeholder/50/70';
+                                                e.target.style.visibility = 'hidden';
                                             }}
                                         />
-                                    </td>
-                                    <td>{movie.title}</td>
-                                    <td>{movie.price} Ft</td>
-                                    <td>{movie.discountedPrice ? `${movie.discountedPrice} Ft` : '-'}</td>
+                                    </TableCell>
+                                    <TableCell className="font-medium">{movie.title}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{formatPrice(movie.price)}</TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                        {movie.discountedPrice ? <span className="text-destructive">{formatPrice(movie.discountedPrice)}</span> : <span className="text-muted-foreground">-</span>}
+                                    </TableCell>
                                     {viewMode === "all" && (
-                                        <td>
-                                            <span className={`badge ${movie.isDeleted ? "bg-danger" : "bg-success"}`}>
+                                        <TableCell>
+                                            <Badge variant={movie.isDeleted ? "danger" : "success"}>
                                                 {movie.isDeleted ? "Deleted" : "Active"}
-                                            </span>
-                                        </td>
+                                            </Badge>
+                                        </TableCell>
                                     )}
-                                    <td>
-                                        <div className="btn-group">
+                                    <TableCell>
+                                        <div className="flex flex-wrap justify-end gap-1">
                                             {/* If in deleted view or it's a deleted movie in all view */}
                                             {(isDeletedView || (viewMode === "all" && movie.isDeleted)) ? (
-                                                // Actions for deleted movies
-                                                <>
-                                                    <button
-                                                        className="btn btn-sm btn-outline-success"
-                                                        onClick={() => handleRestoreMovie(movie.id)}
-                                                    >
-                                                        <i className="bi bi-arrow-counterclockwise"></i> Restore
-                                                    </button>
-                                                    
-                                                </>
+                                                <Button variant="ghost" size="sm" className="text-success hover:text-success" onClick={() => handleRestoreMovie(movie.id)}>
+                                                    <RotateCcw /> Restore
+                                                </Button>
                                             ) : (
-                                                // Actions for active movies
                                                 <>
-                                                    <Link to={`/admin/movies/edit/${movie.id}`} className="btn btn-sm btn-outline-primary">
-                                                        <i className="bi bi-pencil"></i> Edit
-                                                    </Link>
-                                                    <button
-                                                        className="btn btn-sm btn-outline-danger"
+                                                    <Button variant="ghost" size="sm" asChild>
+                                                        <Link to={`/admin/movies/edit/${movie.id}`}><Pencil /> Edit</Link>
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" asChild>
+                                                        <Link to={`/admin/movies/categories/${movie.id}`}><Tags /> Categories</Link>
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" asChild>
+                                                        <Link to={`/admin/movies/${movie.id}/video`}><FileVideo /> Video</Link>
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-destructive hover:text-destructive"
                                                         onClick={() => handleSoftDeleteMovie(movie.id)}
                                                     >
-                                                        <i className="bi bi-trash"></i> Delete
-                                                    </button>
-                                                    <Link to={`/admin/movies/categories/${movie.id}`} className="btn btn-sm btn-outline-secondary">
-                                                        <i className="bi bi-tags"></i> Categories
-                                                    </Link>
-                                                    <Link to={`/admin/movies/${movie.id}/video`} className="btn btn-sm btn-outline-success">
-                                                        <i className="bi bi-film"></i> Video
-                                                    </Link>
+                                                        <Trash2 /> Delete
+                                                    </Button>
                                                 </>
                                             )}
                                         </div>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                        </TableBody>
+                    </Table>
+                </Card>
             )}
-        </div>
+        </PageContainer>
     );
 };
 

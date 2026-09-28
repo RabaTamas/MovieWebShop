@@ -15,6 +15,8 @@ Diplomatervezési projekt — egy olyan webalkalmazás, amely egyszerre valósí
 - [Konfiguráció](#konfiguráció)
 - [Projektstruktúra](#projektstruktúra)
 - [Adatmodell](#adatmodell)
+- [Mikroszervíz architektúra](#mikroszervíz-architektúra)
+- [Felhőalapú telepítés (Azure)](#felhőalapú-telepítés-azure)
 - [Továbbfejlesztési terv](#továbbfejlesztési-terv)
 
 ---
@@ -68,7 +70,7 @@ Háromrétegű (three-tier) webalkalmazás, ahol a rétegek között szigorú fe
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  React 19 SPA (Vite + Bootstrap 5)                    :3000      │
+│  React 19 SPA (Vite + Tailwind CSS 4 + shadcn/ui)     :3000      │
 │  REST/JSON  ·  JWT Bearer  ·  SignalR WebSocket  ·  HLS.js       │
 └───────────────┬──────────────────────────────┬───────────────────┘
                 │ REST + SignalR               │ HLS (SAS URL)
@@ -90,6 +92,7 @@ Néhány kiemelt tervezési döntés:
 - **Elasticsearch-szinkronizáció EF Core interceptorral.** Az [ElasticsearchSyncInterceptor](MovieShop/MovieShop.Server/Data/Interceptors/ElasticsearchSyncInterceptor.cs) minden `SaveChanges`/`SaveChangesAsync` után átvizsgálja a `ChangeTracker`-t, és a módosított `Movie` entitásokat automatikusan indexeli vagy törli az indexből. A service réteg kódjában így egyetlen explicit indexelési hívás sincs.
 - **Historikus ár rögzítése.** Az `OrderMovie` és `ShoppingCartMovie` közbenső entitások eltárolják a tranzakció pillanatában érvényes árat, így későbbi árváltozás nem írja felül a múltat.
 - **Migrációk indításkor.** A backend startup során lefuttatja a `Database.MigrateAsync()`-et, majd beveti a szerepköröket és az admin felhasználót ([Program.cs:209-232](MovieShop/MovieShop.Server/Program.cs#L209-L232)) — nincs kézi migrációs lépés a telepítésben.
+- **Egységes design system a frontenden.** A felület Tailwind CSS 4-re és shadcn/ui komponensekre épül (a korábbi Bootstrap sablon teljesen kivezetve). A színek CSS-változóként vannak definiálva ([index.css](MovieShop/movieshop.client/src/index.css)): az alapértelmezés sötét, „mozis" téma borostyán kiemelőszínnel, a navigációs sávban világos módra váltható (a választás `localStorage`-ben marad). Az újrahasznosítható építőelemek a [components/ui](MovieShop/movieshop.client/src/components/ui/) mappában vannak; az üzleti logika és az API-hívások a stílusváltás során nem változtak, így a frontend továbbra is mindkét backenddel (monolit és mikroszervíz) működik. A filmadatlap a `GET /api/Movie/{id}/tmdb` végpontról (mindkét backendben) tölti be a TMDB háttérképeit, galériáját, szereplőit és rendezőjét; a mozgásokat (belebegő címsor, poszterfal, 3D-s kártyadöntés, animált értékelési gyűrű, élő aukciók fénykerete) a Motion könyvtár és CSS keyframe-ek adják, a rendszer „csökkentett mozgás" beállítását tiszteletben tartva.
 - **Streaming két úton.** Az elsődleges út az Azure Blob Storage + SAS URL; emellett fut egy nginx konténer `secure_link` modullal ([nginx-streaming/nginx.conf](MovieShop/nginx-streaming/nginx.conf)), amely aláírt, lejáró URL-ekkel szolgálja ki a lokálisan tárolt fájlokat.
 
 ---
@@ -98,15 +101,15 @@ Néhány kiemelt tervezési döntés:
 
 | Réteg | Technológia |
 |---|---|
-| **Frontend** | React 19, Vite 6, React Router 7, Bootstrap 5, Axios |
+| **Frontend** | React 19, Vite 6, React Router 7, Tailwind CSS 4, shadcn/ui (Radix UI primitívek), Motion (animációk), Axios |
 | **Média / valós idő** | HLS.js, `@microsoft/signalr`, Web Speech API |
-| **Fizetés / UI kiegészítők** | `@stripe/react-stripe-js`, Recharts, `qrcode.react`, lucide-react |
+| **Fizetés / UI kiegészítők** | `@stripe/react-stripe-js`, Sonner (toast), lucide-react ikonok, Recharts, `qrcode.react` |
 | **Backend** | ASP.NET Core 8 (LTS), C#, Entity Framework Core 9, AutoMapper, Hangfire |
 | **Hitelesítés** | ASP.NET Core Identity, JWT, Google OAuth 2.0, TOTP (RFC 6238) |
 | **Adatbázis** | Microsoft SQL Server 2022 (Code First migrációk) |
 | **Keresés** | Elasticsearch 7.17 + NEST kliens |
 | **Média** | FFmpeg, HLS (RFC 8216), Azure Blob Storage |
-| **Külső API-k** | Stripe, Groq (Llama), TMDB |
+| **Külső API-k** | Stripe, Groq (`openai/gpt-oss-20b` és `gpt-oss-120b`), TMDB |
 | **Infrastruktúra** | Docker, docker-compose, nginx |
 | **Dokumentáció** | Swagger / Swashbuckle (OpenAPI) |
 
@@ -191,6 +194,7 @@ A backend beállításai [appsettings.json](MovieShop/MovieShop.Server/appsettin
 | `Elasticsearch__Url` | keresőmotor |
 | `Streaming__BaseUrl` | az nginx streaming szolgáltatás címe |
 | `CORS__AllowedOrigins` | engedélyezett frontend originek (vesszővel elválasztva) |
+| `WebPush__PublicKey` / `__PrivateKey` / `__Subject` | VAPID kulcsok a push értesítésekhez (`.env`: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) |
 
 A frontend a `VITE_API_URL` változót olvassa ([src/config/api.js](MovieShop/movieshop.client/src/config/api.js)), fallbackként `http://localhost:5000`-t használ.
 
@@ -259,17 +263,122 @@ A `MovieWebShopDB` adatbázis EF Core Code First migrációkkal épül. A fontos
 
 ---
 
+## Mikroszervíz architektúra
+
+A monolit backend szét van bontva **öt önállóan deployolható szolgáltatásra** egy Ocelot API gateway mögött, RabbitMQ-alapú eseményvezérelt kommunikációval. A kód a [MovieShop/services/](MovieShop/services/) mappában él, a részletes leírás pedig itt: **[MICROSERVICES.md](MovieShop/MICROSERVICES.md)**.
+
+| Service | Port | Felelősség |
+|---|---|---|
+| **Frontend** | **3001** | ugyanaz a React kliens, a gatewayre mutatva |
+| API Gateway (Ocelot) | 5200 | egyetlen belépési pont, útválasztás, CORS |
+| User | 5201 | Identity, JWT-kibocsátás, Google OAuth, 2FA, címek |
+| Catalog | 5202 | filmek, kategóriák, értékelések, Elasticsearch, HLS streaming |
+| Order | 5203 | kosár, rendelés, Stripe, ajánlórendszer |
+| Auction | 5204 | aukciók, licitek, SignalR hub |
+| Chat | 5205 | Groq chatbot (gpt-oss), agentic eszközhívás |
+
+```bash
+# A MovieShop/ mappából
+docker compose -f docker-compose.microservices.yml up -d --build
+```
+
+Minden port el van tolva a monolit stackhez képest, tehát **a kettő egyszerre futtatható és összemérhető** — ez a feladatkiírás utolsó pontjához (értékelés alternatív megközelítésekkel) szükséges.
+
+A szétbontás kulcsa az eseményvezérelt adatreplikáció: a Catalog `MovieChanged` eseményt publikál, amiből az Order `MovieSnapshot` táblát tart karban — így az ajánlórendszer kollaboratív szűrése lokális join maradt. Visszafelé az Order `OrderCompleted`-et publikál, amiből a Catalog `Entitlements` projekciót épít, így a streaming jogosultság-ellenőrzése sem hálózati hívás.
+
+> A monolit `MovieShop.Server` **változatlanul megmarad és működik** — nem lett kivezetve.
+
+---
+
+## PWA (telepíthető alkalmazás)
+
+A frontend Progressive Web App ([vite-plugin-pwa](https://vite-pwa-org.netlify.app/), Workbox): telefonon és asztali Chrome-ban „Hozzáadás a kezdőképernyőhöz" / „Telepítés" funkcióval saját ikonnal, böngészősáv nélkül indul.
+
+- **Előtöltött alkalmazásváz** — a Service Worker telepítéskor letölti a HTML/JS/CSS-t és az ikonokat, így az alkalmazás hálózat nélkül is elindul; offline állapotban sáv jelzi, a szerveres tartalmak helyén „You are offline" állapot jelenik meg.
+- **Futásidejű cache** — TMDB-képek (CacheFirst, 30 nap), egyéb képek és a Google Fonts.
+- **Szándékosan nincs cache-elve** — az `/api/*` hívások (felhasználói adatok: kosár, rendelések), a `/hubs/*` SignalR kapcsolatok és a videóstream (HLS szegmensek, lejáró Azure SAS URL-ek).
+- **Frissítés** — új verziónál toast jelenik meg („A new version is available" → *Update*); a felhasználó dönt az újratöltésről.
+- Az [nginx.conf](MovieShop/movieshop.client/nginx.conf) a `sw.js`-t és a manifestet `no-cache` fejléccel, a hash-elt `/assets/*` fájlokat egy évre cache-elve szolgálja ki.
+- **Push értesítések** — új film felvételekor minden feliratkozott eszköz értesítést kap, akkor is, ha az app nincs nyitva. Bekapcsolás: *Profile → Notifications*.
+  - A saját Service Worker a [src/sw.js](MovieShop/movieshop.client/src/sw.js) (`injectManifest` mód).
+  - A küldés RFC 8291/8292 szerinti (`aes128gcm` + VAPID) a `Lib.Net.Http.WebPush` csomaggal.
+  - Monolit: Hangfire háttérfeladat indítja. Mikroszervíz: a User Service `MovieChangedConsumer`-e (`IsNew` jelzésű esemény a Catalog Service-től).
+  - Végpontok: `GET /api/Push/vapid-public-key`, `POST /api/Push/subscribe`, `/unsubscribe`, `/test`.
+  - iOS/iPadOS-en csak 16.4-től, kezdőképernyőre telepített PWA-ból működik.
+
+A Service Worker csak **HTTPS-en vagy `localhost`-on** működik. Felhőbe telepítés nélkül telefonon USB-kábellel próbálható ki (Android, fejlesztői mód + USB-hibakeresés bekapcsolva):
+
+```bash
+adb reverse tcp:3000 tcp:3000   # frontend (monolit)
+adb reverse tcp:5000 tcp:5000   # backend API
+# mikroszervíz változathoz: adb reverse tcp:3001 tcp:3001 && adb reverse tcp:5200 tcp:5200
+```
+
+Ezután a telefon Chrome-jában a `http://localhost:3000` cím nyitható meg és telepíthető — a telefon a gépet `localhost`-ként látja, így a Service Worker, az API-cím, a CORS és a Google-bejelentkezés módosítás nélkül működik.
+
+---
+
+## Felhőalapú telepítés (Azure)
+
+A **mikroszervíz változat** publikus HTTPS-címen fut az Azure-ban (France Central). A monolit szándékosan lokális maradt: a dolgozat kiindulási állapotát dokumentálja, felhőbe telepítve csak duplázná a költséget.
+
+| | Cím |
+|---|---|
+| Frontend | https://frontend.gentlefield-3367b248.francecentral.azurecontainerapps.io |
+| API (gateway) | https://gateway.gentlefield-3367b248.francecentral.azurecontainerapps.io |
+
+**Mi hol fut:** a hat .NET service és a frontend Container Appsben; a négy adatbázis Azure SQL **ingyenes szinten** (serverless, automatikus szüneteltetéssel); az üzenetsor Service Bus (a RabbitMQ helyett); a konténerképek Container Registryben; a videók a meglévő Blob Storage fiókban.
+
+**Két szándékos eltérés a tervtől:**
+
+- **A frontend nem Static Web Apps, hanem Container App.** Az előfizetés házirendje csak öt európai régiót enged, a Static Web Apps viszont egyikben sem érhető el — a kettőnek nincs közös eleme. A meglévő nginx-es kép viszont változtatás nélkül működik, és HTTPS-t is kapunk, ami a PWA-hoz kell.
+- **A keresés a felhőben SQL-alapú** (`Search__Provider=sql`), mert az Azure-ban nincs olcsó menedzselt Elasticsearch. Vállalt korlát: felhőben nincs elgépelés-tűrés. Lokálisan marad az Elasticsearch.
+
+**Skálázás:** a push értesítéseket küldő User Service folyamatosan fut, minden más nullára skálázódik. Költség: nagyjából **20–21 USD/hó**.
+
+Mért válaszidők: meleg rendszeren **0,3 s**; 7 perc tétlenség után (csak a konténer indul újra) **1,0 s**; szünetelő adatbázis ébresztésekor **17,4 s**. Az adatbázisok az ingyenes szinten 60 perc tétlenség után alszanak el, és ezt az értéket az Azure nem engedi átállítani. Bemutató előtt érdemes 5–10 perccel megnyitni az oldalt.
+
+**Videófeltöltés a felhős példányba:** a feltöltés önmagában működik (a kérés felébreszti a service-t), de a **transzkódolás háttérfeladat**, ami csak futó példányban dolgozik — nullára skálázott service mellett félbemarad. Ezért a feltöltés idejére érdemes „ablakot" nyitni, utána visszaállítani:
+
+```bash
+# Feltöltés előtt: állandó példány és több erőforrás
+az containerapp update -n catalogservice -g movieshop-cloud-rg \
+  --min-replicas 1 --max-replicas 1 --cpu 1.0 --memory 2.0Gi
+
+# Amikor a transzkódolás elkészült (megjelenik a <id>_master.m3u8 a blobban):
+az containerapp update -n catalogservice -g movieshop-cloud-rg \
+  --min-replicas 0 --max-replicas 1 --cpu 0.25 --memory 0.5Gi
+```
+
+> A `max-replicas 1` nem véletlen: a Watch Party SignalR hubja is ebben a service-ben fut, és több példányon szétcsúszna.
+
+**Újratelepítés** (egyetlen service frissítése):
+
+```bash
+# A services/ mappából — a kép a felhőben épül, nem kell helyben Docker
+az acr build -r movieshopacr -t movieshop/catalogservice:v3 -f MovieShop.CatalogService/Dockerfile .
+az containerapp update -n catalogservice -g movieshop-cloud-rg \
+  --image movieshopacr.azurecr.io/movieshop/catalogservice:v3
+```
+
+> A környezeti változó módosítása önmagában **nem** cseréli le a futó példányt ebben a környezettípusban — ilyenkor új képcímkére kell állítani az alkalmazást.
+
+**Teljes törlés** (a videókat tartalmazó `movieshop-rg` nem érintett):
+
+```bash
+az group delete -n movieshop-cloud-rg --yes
+```
+
+---
+
 ## Továbbfejlesztési terv
 
 A következő félévre tervezett irányok:
 
-- **Mikroszervíz architektúra** — a monolit backend szolgáltatásokra bontása (User, Catalog, Order), API Gateway (Ocelot) és aszinkron üzenetsor (Azure Service Bus) mellett
-- **Azure deployment** — Static Web Apps (frontend), Container Apps (backend), Azure SQL, Container Registry, GitHub Actions CI/CD
+- **CI/CD (GitHub Actions)** — a felhős telepítés jelenleg kézi lépésekkel történik (lásd [Felhőalapú telepítés](#felhőalapú-telepítés-azure)); a `main` branchre pusholt változások automatikus újraépítése és telepítése hátravan
+- **Redis backplane** — a SignalR hubok és a chatbot munkamenetei jelenleg memóriában élnek, ezért a service-ek egyetlen példányra korlátozottak
 - **Redis cache** a gyakran lekérdezett adatokra (népszerű filmek, kategóriák, chatbot kontextus)
 - **Monitoring és terheléstesztelés** — Prometheus + Grafana metrikák, k6 terhelési szcenáriók az architekturális döntések számszerűsítéséhez
-- **Frontend modernizálás** — a Bootstrap fokozatos kiváltása Tailwind CSS + shadcn/ui komponensekre
-- **PWA** támogatás `vite-plugin-pwa`-val: offline cache és push értesítések
-
 ---
 
 ## Szerző

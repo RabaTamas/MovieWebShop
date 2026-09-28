@@ -1,19 +1,14 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { UserRoles } from "../constants/UserRoles";
+import { LoadingState } from "@/components/ui/spinner";
 
 const AdminRoute = ({ children }) => {
     const { user, loading } = useAuth();
 
     // Show loading while checking authentication
     if (loading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        );
+        return <LoadingState />;
     }
 
     // If not logged in, redirect to login

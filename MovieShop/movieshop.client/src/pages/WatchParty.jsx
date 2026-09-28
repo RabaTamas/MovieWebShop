@@ -1,9 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+    AlertCircle, ArrowLeft, Check, Copy, Crown, Info, LogOut, MessageCircle, PartyPopper, Plus, RefreshCw,
+    Send, UserRound, Users,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import API_BASE_URL from '../config/api';
 import Hls from 'hls.js';
 import * as signalR from '@microsoft/signalr';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Spinner } from '@/components/ui/spinner';
 
 const WatchParty = () => {
     const { movieId } = useParams();
@@ -126,7 +135,7 @@ const WatchParty = () => {
 
     // Auto-scroll chat
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, [messages]);
 
     const addSystemMsg = useCallback((text) => {
@@ -325,60 +334,68 @@ const WatchParty = () => {
     // ─── LOBBY ────────────────────────────────────────────────────────────────
     if (phase === 'lobby') {
         return (
-            <div className="container mt-5">
-                <div className="row justify-content-center">
-                    <div className="col-md-6 col-lg-5">
-                        <button onClick={() => navigate('/my-movies')} className="btn btn-outline-secondary btn-sm mb-3">
-                            <i className="bi bi-arrow-left me-1"></i> Back to My Movies
-                        </button>
+            <div className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-12">
+                {movie?.imageUrl && (
+                    <div
+                        className="absolute inset-0 scale-110 bg-cover bg-center opacity-25 blur-3xl"
+                        style={{ backgroundImage: `url(${movie.imageUrl})` }}
+                        aria-hidden="true"
+                    />
+                )}
+                <div className="relative w-full max-w-md">
+                    <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate('/my-movies')}>
+                        <ArrowLeft /> Back to My Movies
+                    </Button>
 
-                        <div className="card shadow-sm">
-                            <div className="card-body p-4">
-                                <h3 className="card-title mb-1">
-                                    <i className="bi bi-people-fill me-2 text-primary"></i>
-                                    Watch Party
-                                </h3>
-                                {movie && <p className="text-muted mb-4 small">{movie.title}</p>}
+                    <div className="overflow-hidden rounded-2xl border bg-card/90 shadow-2xl backdrop-blur">
+                        <div className="flex items-center gap-4 border-b p-6">
+                            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                                <PartyPopper className="size-6" />
+                            </div>
+                            <div className="min-w-0">
+                                <h1 className="text-2xl font-bold tracking-tight">Watch Party</h1>
+                                {movie && <p className="truncate text-sm text-muted-foreground">{movie.title}</p>}
+                            </div>
+                        </div>
 
-                                {videoError && <div className="alert alert-danger">{videoError}</div>}
-                                {roomError && <div className="alert alert-danger">{roomError}</div>}
+                        <div className="space-y-5 p-6">
+                            {videoError && (
+                                <Alert variant="destructive"><AlertCircle /><AlertDescription>{videoError}</AlertDescription></Alert>
+                            )}
+                            {roomError && (
+                                <Alert variant="destructive"><AlertCircle /><AlertDescription>{roomError}</AlertDescription></Alert>
+                            )}
 
-                                <div className="d-grid mb-3">
-                                    <button
-                                        className="btn btn-primary btn-lg"
-                                        onClick={createRoom}
-                                        disabled={isConnecting || !!videoError}
-                                    >
-                                        {isConnecting ? (
-                                            <><span className="spinner-border spinner-border-sm me-2" />Connecting...</>
-                                        ) : (
-                                            <><i className="bi bi-plus-circle me-2" />Start Watch Party</>
-                                        )}
-                                    </button>
-                                </div>
+                            <Button size="lg" className="h-12 w-full text-base" onClick={createRoom} disabled={isConnecting || !!videoError}>
+                                {isConnecting ? <><Spinner />Connecting...</> : <><Plus />Start Watch Party</>}
+                            </Button>
 
-                                <div className="text-center text-muted mb-3 small">— or join with a code —</div>
+                            <div className="flex items-center gap-3 text-xs tracking-wider text-muted-foreground uppercase">
+                                <span className="h-px flex-1 bg-border" />
+                                or join with a code
+                                <span className="h-px flex-1 bg-border" />
+                            </div>
 
-                                <div className="input-group">
-                                    <input
-                                        type="text"
-                                        className="form-control form-control-lg text-uppercase text-center"
-                                        placeholder="XXXXXX"
-                                        value={joinCodeInput}
-                                        onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
-                                        onKeyDown={e => e.key === 'Enter' && joinRoom()}
-                                        maxLength={6}
-                                        style={{ letterSpacing: '0.25em', fontWeight: 'bold' }}
-                                        disabled={isConnecting}
-                                    />
-                                    <button
-                                        className="btn btn-outline-primary"
-                                        onClick={joinRoom}
-                                        disabled={isConnecting || !joinCodeInput.trim() || !!videoError}
-                                    >
-                                        Join
-                                    </button>
-                                </div>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="text"
+                                    className="h-12 text-center font-mono text-lg font-bold tracking-[0.35em] uppercase md:text-lg"
+                                    placeholder="XXXXXX"
+                                    aria-label="Room code"
+                                    value={joinCodeInput}
+                                    onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                                    onKeyDown={e => e.key === 'Enter' && joinRoom()}
+                                    maxLength={6}
+                                    disabled={isConnecting}
+                                />
+                                <Button
+                                    variant="secondary"
+                                    className="h-12 px-6"
+                                    onClick={joinRoom}
+                                    disabled={isConnecting || !joinCodeInput.trim() || !!videoError}
+                                >
+                                    Join
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -389,121 +406,117 @@ const WatchParty = () => {
 
     // ─── IN-ROOM ──────────────────────────────────────────────────────────────
     return (
-        <div className="bg-dark text-white" style={{ minHeight: '100vh' }}>
+        // A szoba nézet mindig sötét, a választott témától függetlenül
+        <div className="dark flex flex-1 flex-col bg-background text-foreground">
             {/* Room header bar */}
-            <div className="container-fluid py-2 border-bottom border-secondary bg-black">
-                <div className="container d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div className="d-flex align-items-center gap-2 flex-wrap">
-                        <span className="text-muted small">Room:</span>
-                        <span className="badge bg-primary fs-6 px-3 py-2" style={{ letterSpacing: '0.2em' }}>
+            <div className="border-b bg-black/40">
+                <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Room:</span>
+                        <span className="rounded-md bg-primary px-3 py-1 font-mono text-base font-bold tracking-[0.25em] text-primary-foreground">
                             {roomCode}
                         </span>
-                        <button className="btn btn-sm btn-outline-light" onClick={copyCode}>
-                            <i className={`bi ${codeCopied ? 'bi-check-lg' : 'bi-clipboard'} me-1`} />
+                        <Button size="sm" variant="outline" onClick={copyCode}>
+                            {codeCopied ? <Check /> : <Copy />}
                             {codeCopied ? 'Copied!' : 'Copy'}
-                        </button>
+                        </Button>
                         {isHost && (
-                            <span className="badge bg-warning text-dark">
-                                <i className="bi bi-crown-fill me-1" />Host
-                            </span>
+                            <Badge variant="warning" className="px-2 py-1">
+                                <Crown />Host
+                            </Badge>
                         )}
                     </div>
-                    <div className="d-flex align-items-center gap-3">
-                        <span className="text-muted small">
-                            <i className="bi bi-people me-1" />{members.length} watching
+                    <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Users className="size-4" />{members.length} watching
                         </span>
-                        <button className="btn btn-sm btn-outline-danger" onClick={leaveRoom}>
-                            <i className="bi bi-box-arrow-left me-1" />Leave
-                        </button>
+                        <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={leaveRoom}>
+                            <LogOut />Leave
+                        </Button>
                     </div>
                 </div>
             </div>
 
             {/* Main content */}
-            <div className="container-fluid py-3 px-3">
-                <div className="row g-3" style={{ minHeight: 'calc(100vh - 60px)' }}>
+            <div className="mx-auto grid w-full max-w-[1600px] flex-1 gap-4 p-4 sm:px-6 lg:grid-cols-[1fr_320px]">
+                {/* Video column */}
+                <div className="min-w-0 space-y-3">
+                    {!isHost && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm">
+                            <span className="flex items-center gap-2">
+                                <Info className="size-4 text-sky-400" />
+                                Host controls playback. You can seek locally.
+                            </span>
+                            <Button size="sm" variant="outline" onClick={resyncToHost}>
+                                <RefreshCw />Re-sync
+                            </Button>
+                        </div>
+                    )}
 
-                    {/* Video column */}
-                    <div className="col-lg-9">
-                        {!isHost && (
-                            <div className="alert alert-info alert-dismissible py-2 mb-2 d-flex align-items-center justify-content-between">
-                                <span className="small">
-                                    <i className="bi bi-info-circle me-2" />
-                                    Host controls playback. You can seek locally.
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-black shadow-2xl ring-1 ring-white/10">
+                        <video ref={videoRef} controls className="size-full" />
+                    </div>
+
+                    {movie && (
+                        <h2 className="font-display text-3xl tracking-wide">{movie.title}</h2>
+                    )}
+                </div>
+
+                {/* Sidebar: members + chat */}
+                <div className="flex min-h-[420px] flex-col gap-3 lg:max-h-[calc(100vh-10rem)]">
+                    {/* Members */}
+                    <div className="rounded-xl border bg-card p-3">
+                        <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                            <Users className="size-4 text-primary" />
+                            Viewers ({members.length})
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {members.map((m, i) => (
+                                <span key={i} className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs">
+                                    <UserRound className="size-3 text-primary" />
+                                    <span className="truncate">{m}</span>
                                 </span>
-                                <button className="btn btn-sm btn-outline-info" onClick={resyncToHost}>
-                                    <i className="bi bi-arrow-clockwise me-1" />Re-sync
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="ratio ratio-16x9 rounded overflow-hidden bg-black">
-                            <video ref={videoRef} controls className="w-100 h-100" />
+                            ))}
                         </div>
-
-                        {movie && (
-                            <h5 className="mt-3 mb-0">{movie.title}</h5>
-                        )}
                     </div>
 
-                    {/* Sidebar: members + chat */}
-                    <div className="col-lg-3 d-flex flex-column" style={{ maxHeight: 'calc(100vh - 70px)' }}>
-                        {/* Members */}
-                        <div className="card bg-secondary text-white mb-2">
-                            <div className="card-body py-2 px-3">
-                                <div className="d-flex align-items-center mb-2">
-                                    <i className="bi bi-people me-2 text-info" />
-                                    <span className="fw-bold small">Viewers ({members.length})</span>
-                                </div>
-                                {members.map((m, i) => (
-                                    <div key={i} className="d-flex align-items-center gap-2 small mb-1">
-                                        <i className="bi bi-person-circle text-info" />
-                                        <span className="text-truncate">{m}</span>
+                    {/* Chat */}
+                    <div className="flex min-h-0 flex-1 flex-col rounded-xl border bg-card">
+                        <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-semibold">
+                            <MessageCircle className="size-4 text-primary" />Chat
+                        </div>
+
+                        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-2 text-sm">
+                            {messages.map((msg, i) => (
+                                msg.type === 'system' ? (
+                                    <div key={i} className="py-0.5 text-center text-xs text-muted-foreground italic">
+                                        {msg.text}
                                     </div>
-                                ))}
-                            </div>
+                                ) : (
+                                    <div key={i} className="break-words">
+                                        <span className="font-semibold text-primary">{msg.userName}: </span>
+                                        <span className="text-foreground/80">{msg.message}</span>
+                                    </div>
+                                )
+                            ))}
+                            <div ref={chatEndRef} />
                         </div>
 
-                        {/* Chat */}
-                        <div className="card bg-secondary text-white flex-grow-1 d-flex flex-column" style={{ minHeight: 0 }}>
-                            <div className="card-header py-2 px-3 small fw-bold border-0">
-                                <i className="bi bi-chat-dots me-2 text-info" />Chat
-                            </div>
-
-                            <div className="flex-grow-1 overflow-auto px-3 py-2" style={{ fontSize: '0.82rem' }}>
-                                {messages.map((msg, i) => (
-                                    msg.type === 'system' ? (
-                                        <div key={i} className="text-center text-muted fst-italic my-1" style={{ fontSize: '0.75rem' }}>
-                                            {msg.text}
-                                        </div>
-                                    ) : (
-                                        <div key={i} className="mb-1">
-                                            <span className="fw-semibold text-info">{msg.userName}: </span>
-                                            <span className="text-white-50">{msg.message}</span>
-                                        </div>
-                                    )
-                                ))}
-                                <div ref={chatEndRef} />
-                            </div>
-
-                            <div className="card-footer p-2 border-0">
-                                <form onSubmit={sendChat} className="d-flex gap-2">
-                                    <input
-                                        type="text"
-                                        className="form-control form-control-sm bg-dark text-white border-secondary"
-                                        placeholder="Send a message..."
-                                        value={chatInput}
-                                        onChange={e => setChatInput(e.target.value)}
-                                        maxLength={200}
-                                    />
-                                    <button type="submit" className="btn btn-sm btn-primary px-2">
-                                        <i className="bi bi-send-fill" />
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                        <form onSubmit={sendChat} className="flex gap-2 border-t p-2">
+                            <Input
+                                type="text"
+                                className="h-8"
+                                placeholder="Send a message..."
+                                aria-label="Chat message"
+                                value={chatInput}
+                                onChange={e => setChatInput(e.target.value)}
+                                maxLength={200}
+                            />
+                            <Button type="submit" size="icon-sm" aria-label="Send">
+                                <Send />
+                            </Button>
+                        </form>
                     </div>
-
                 </div>
             </div>
         </div>

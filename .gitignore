@@ -68,3 +68,8 @@ Desktop.ini
 
 # Linux
 *~
+
+# Fordítási melléktermékek — soha ne kerüljenek a repóba.
+# (A bin/ alatti appsettings.json másolata korábban valódi kulcsokat vitt magával.)
+[Bb]in/
+[Oo]bj/

@@ -419,7 +419,9 @@ namespace MovieShop.Server.Services.Implementations
 
                 var requestBody = new
                 {
-                    model = "llama-3.1-8b-instant",
+                    // A Groq kivezette a Llama modelleket (llama-3.1-8b-instant, llama-3.3-70b-versatile),
+                    // ezért a modell konfigurálható; az alapértelmezés a gyors, kisméretű gpt-oss-20b.
+                    model = _configuration["Groq:ChatModel"] ?? "openai/gpt-oss-20b",
                     messages = messages.ToArray(),
                     max_tokens = 250,
                     temperature = 0.3, // ALACSONYABB = kevesebb kreativitás = kevesebb hallucináció

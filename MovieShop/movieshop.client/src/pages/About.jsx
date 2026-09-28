@@ -1,274 +1,176 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
+import {
+    Bot, Clapperboard, Code2, Database, Gavel, Home, Info, Library, Mail, MessageSquareText, Paintbrush, Server,
+    ShieldCheck, Target, Zap,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+const features = [
+    {
+        icon: Library,
+        title: 'Vast Collection',
+        text: 'Browse through thousands of movies across all genres, from classics to the latest releases.',
+    },
+    {
+        icon: ShieldCheck,
+        title: 'Secure Shopping',
+        text: 'Shop with confidence using our secure payment system and encrypted transactions.',
+    },
+    {
+        icon: MessageSquareText,
+        title: 'Community Reviews',
+        text: 'Read authentic reviews from fellow movie lovers and share your own experiences.',
+    },
+    {
+        icon: Zap,
+        title: 'Instant Streaming',
+        text: 'Start watching right after purchase with adaptive HLS streaming — or together in a Watch Party.',
+    },
+];
+
+const techStack = [
+    { icon: Code2, label: 'React' },
+    { icon: Server, label: 'ASP.NET Core' },
+    { icon: Database, label: 'SQL Server' },
+    { icon: Paintbrush, label: 'Tailwind CSS + shadcn/ui' },
+];
 
 const About = () => {
     return (
-        <div className="container py-5">
+        <div>
             {/* Hero Section */}
-            <div className="row justify-content-center mb-5">
-                <div className="col-lg-8 text-center">
-                    <div
-                        className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
-                        style={{
-                            width: '100px',
-                            height: '100px',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white'
-                        }}
-                    >
-                        <i className="bi bi-film fs-1"></i>
+            <section className="relative overflow-hidden border-b">
+                <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                    <div className="absolute -top-32 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
+                </div>
+                <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6">
+                    <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/30">
+                        <Clapperboard className="size-8" />
                     </div>
-                    <h1 className="display-4 fw-bold text-dark mb-3">About MovieWebshop</h1>
-                    <p className="lead text-muted">
+                    <h1 className="font-display text-6xl leading-none tracking-wide sm:text-7xl">
+                        About Movie<span className="text-primary">WebShop</span>
+                    </h1>
+                    <p className="mt-5 text-lg text-muted-foreground">
                         Your ultimate destination for discovering, purchasing, and enjoying the best movies from around the world.
                     </p>
                 </div>
-            </div>
+            </section>
 
-            {/* Main Content */}
-            <div className="row g-5">
-                {/* What We Are */}
-                <div className="col-lg-6">
-                    <div
-                        className="h-100 p-4 rounded-4 border"
-                        style={{
-                            background: 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
-                            borderLeft: '5px solid transparent',
-                            borderImage: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                            borderImageSlice: 1
-                        }}
-                    >
-                        <div className="d-flex align-items-center mb-3">
-                            <div
-                                className="d-flex align-items-center justify-content-center rounded-circle me-3"
-                                style={{
-                                    width: '50px',
-                                    height: '50px',
-                                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                                    color: 'white'
-                                }}
-                            >
-                                <i className="bi bi-info-circle fs-5"></i>
+            <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
+                {/* Main Content */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="rounded-2xl border bg-card p-8">
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                                <Info className="size-5" />
                             </div>
-                            <h3 className="fw-bold text-dark mb-0">What We Are</h3>
+                            <h2 className="text-2xl font-bold">What We Are</h2>
                         </div>
-                        <p className="text-muted lh-lg">
-                            MovieWebshop is a modern e-commerce platform dedicated to movie enthusiasts.
-                            We provide a seamless shopping experience where you can browse, discover, and
-                            purchase your favorite movies from various genres and eras.
-                        </p>
-                        <p className="text-muted lh-lg mb-0">
-                            Built with cutting-edge technology using React and ASP.NET Core, we ensure
-                            a fast, secure, and user-friendly experience for all our customers.
-                        </p>
+                        <div className="space-y-3 leading-relaxed text-muted-foreground">
+                            <p>
+                                MovieWebshop is a modern e-commerce platform dedicated to movie enthusiasts.
+                                We provide a seamless shopping experience where you can browse, discover, and
+                                purchase your favorite movies from various genres and eras.
+                            </p>
+                            <p>
+                                Built with cutting-edge technology using React and ASP.NET Core, we ensure
+                                a fast, secure, and user-friendly experience for all our customers.
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                {/* Our Mission */}
-                <div className="col-lg-6">
-                    <div
-                        className="h-100 p-4 rounded-4 border"
-                        style={{
-                            background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-                            borderLeft: '5px solid transparent',
-                            borderImage: 'linear-gradient(135deg, #10b981, #059669)',
-                            borderImageSlice: 1
-                        }}
-                    >
-                        <div className="d-flex align-items-center mb-3">
-                            <div
-                                className="d-flex align-items-center justify-content-center rounded-circle me-3"
-                                style={{
-                                    width: '50px',
-                                    height: '50px',
-                                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                                    color: 'white'
-                                }}
-                            >
-                                <i className="bi bi-bullseye fs-5"></i>
+                    <div className="rounded-2xl border bg-card p-8">
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="flex size-11 items-center justify-center rounded-xl bg-success/15 text-success">
+                                <Target className="size-5" />
                             </div>
-                            <h3 className="fw-bold text-dark mb-0">Our Mission</h3>
+                            <h2 className="text-2xl font-bold">Our Mission</h2>
                         </div>
-                        <p className="text-muted lh-lg">
-                            Our mission is to make great movies accessible to everyone. We believe that
-                            cinema has the power to inspire, entertain, and bring people together.
-                        </p>
-                        <p className="text-muted lh-lg mb-0">
-                            We strive to curate the finest collection of movies and provide exceptional
-                            customer service to ensure every purchase enhances your movie-watching experience.
-                        </p>
+                        <div className="space-y-3 leading-relaxed text-muted-foreground">
+                            <p>
+                                Our mission is to make great movies accessible to everyone. We believe that
+                                cinema has the power to inspire, entertain, and bring people together.
+                            </p>
+                            <p>
+                                We strive to curate the finest collection of movies and provide exceptional
+                                customer service to ensure every purchase enhances your movie-watching experience.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 {/* Features Grid */}
-                <div className="col-12">
-                    <div className="text-center mb-5">
-                        <h2 className="fw-bold text-dark mb-3">Why Choose MovieWebshop?</h2>
-                        <p className="text-muted">Discover what makes us the perfect choice for movie lovers</p>
+                <section>
+                    <div className="mb-10 text-center">
+                        <h2 className="text-3xl font-bold tracking-tight">Why Choose MovieWebshop?</h2>
+                        <p className="mt-2 text-muted-foreground">Discover what makes us the perfect choice for movie lovers</p>
                     </div>
 
-                    <div className="row g-4">
-                        {/* Feature 1 */}
-                        <div className="col-md-6 col-lg-3">
-                            <div className="text-center p-4 bg-white rounded-4 shadow-sm border h-100">
-                                <div
-                                    className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                                    style={{
-                                        width: '70px',
-                                        height: '70px',
-                                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                                        color: 'white'
-                                    }}
-                                >
-                                    <i className="bi bi-collection fs-4"></i>
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                        {features.map(({ icon: Icon, title, text }) => (
+                            <div
+                                key={title}
+                                className="group rounded-2xl border bg-card p-6 transition-all hover:-translate-y-1 hover:border-primary/40"
+                            >
+                                <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                                    <Icon className="size-6" />
                                 </div>
-                                <h5 className="fw-bold text-dark mb-2">Vast Collection</h5>
-                                <p className="text-muted small mb-0">
-                                    Browse through thousands of movies across all genres, from classics to the latest releases.
-                                </p>
+                                <h3 className="mb-2 font-semibold">{title}</h3>
+                                <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
                             </div>
-                        </div>
+                        ))}
+                    </div>
 
-                        {/* Feature 2 */}
-                        <div className="col-md-6 col-lg-3">
-                            <div className="text-center p-4 bg-white rounded-4 shadow-sm border h-100">
-                                <div
-                                    className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                                    style={{
-                                        width: '70px',
-                                        height: '70px',
-                                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                                        color: 'white'
-                                    }}
-                                >
-                                    <i className="bi bi-shield-check fs-4"></i>
-                                </div>
-                                <h5 className="fw-bold text-dark mb-2">Secure Shopping</h5>
-                                <p className="text-muted small mb-0">
-                                    Shop with confidence using our secure payment system and encrypted transactions.
-                                </p>
-                            </div>
+                    <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                        <div className="flex items-center gap-4 rounded-2xl border bg-card p-5">
+                            <Gavel className="size-6 shrink-0 text-primary" />
+                            <p className="text-sm text-muted-foreground"><strong className="text-foreground">Live auctions</strong> with real-time bidding and anti-sniping protection.</p>
                         </div>
-
-                        {/* Feature 3 */}
-                        <div className="col-md-6 col-lg-3">
-                            <div className="text-center p-4 bg-white rounded-4 shadow-sm border h-100">
-                                <div
-                                    className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                                    style={{
-                                        width: '70px',
-                                        height: '70px',
-                                        background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                                        color: 'white'
-                                    }}
-                                >
-                                    <i className="bi bi-chat-dots fs-4"></i>
-                                </div>
-                                <h5 className="fw-bold text-dark mb-2">Community Reviews</h5>
-                                <p className="text-muted small mb-0">
-                                    Read authentic reviews from fellow movie lovers and share your own experiences.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Feature 4 */}
-                        <div className="col-md-6 col-lg-3">
-                            <div className="text-center p-4 bg-white rounded-4 shadow-sm border h-100">
-                                <div
-                                    className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                                    style={{
-                                        width: '70px',
-                                        height: '70px',
-                                        background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                                        color: 'white'
-                                    }}
-                                >
-                                    <i className="bi bi-lightning fs-4"></i>
-                                </div>
-                                <h5 className="fw-bold text-dark mb-2">Fast Delivery</h5>
-                                <p className="text-muted small mb-0">
-                                    Quick and reliable delivery service to get your movies to you as soon as possible.
-                                </p>
-                            </div>
+                        <div className="flex items-center gap-4 rounded-2xl border bg-card p-5">
+                            <Bot className="size-6 shrink-0 text-primary" />
+                            <p className="text-sm text-muted-foreground"><strong className="text-foreground">AI assistant</strong> that answers questions and performs actions for you.</p>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {/* Technology Stack */}
-                <div className="col-12">
-                    <div
-                        className="p-5 rounded-4 text-center"
-                        style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white'
-                        }}
-                    >
-                        <h3 className="fw-bold mb-3">Built with Modern Technology</h3>
-                        <p className="mb-4 opacity-90">
-                            MovieWebshop is powered by cutting-edge web technologies to ensure the best user experience.
-                        </p>
+                <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/20 via-card to-card p-10 text-center">
+                    <h2 className="text-3xl font-bold tracking-tight">Built with Modern Technology</h2>
+                    <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+                        MovieWebshop is powered by cutting-edge web technologies to ensure the best user experience.
+                    </p>
 
-                        <div className="row justify-content-center g-4">
-                            <div className="col-auto">
-                                <div className="d-flex align-items-center gap-2 bg-white bg-opacity-20 rounded-pill px-4 py-2">
-                                    <i className="bi bi-code-slash"></i>
-                                    <span className="fw-semibold">React</span>
-                                </div>
+                    <div className="mt-8 flex flex-wrap justify-center gap-3">
+                        {techStack.map(({ icon: Icon, label }) => (
+                            <div key={label} className="flex items-center gap-2 rounded-full border bg-background/60 px-5 py-2 font-medium backdrop-blur">
+                                <Icon className="size-4 text-primary" />
+                                {label}
                             </div>
-                            <div className="col-auto">
-                                <div className="d-flex align-items-center gap-2 bg-white bg-opacity-20 rounded-pill px-4 py-2">
-                                    <i className="bi bi-server"></i>
-                                    <span className="fw-semibold">ASP.NET Core</span>
-                                </div>
-                            </div>
-                            <div className="col-auto">
-                                <div className="d-flex align-items-center gap-2 bg-white bg-opacity-20 rounded-pill px-4 py-2">
-                                    <i className="bi bi-database"></i>
-                                    <span className="fw-semibold">SQL Server</span>
-                                </div>
-                            </div>
-                            <div className="col-auto">
-                                <div className="d-flex align-items-center gap-2 bg-white bg-opacity-20 rounded-pill px-4 py-2">
-                                    <i className="bi bi-bootstrap"></i>
-                                    <span className="fw-semibold">Bootstrap</span>
-                                </div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
-                </div>
+                </section>
 
                 {/* Call to Action */}
-                <div className="col-12">
-                    <div className="text-center py-5">
-                        <h3 className="fw-bold text-dark mb-3">Ready to Start Your Movie Journey?</h3>
-                        <p className="text-muted mb-4">
-                            Join thousands of movie enthusiasts who have made MovieWebshop their go-to destination for cinema.
-                        </p>
-                        <div className="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-                            <a
-                                href="/"
-                                className="btn btn-lg px-5 py-3 fw-semibold"
-                                style={{
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    border: 'none',
-                                    color: 'white',
-                                    borderRadius: '12px',
-                                    textDecoration: 'none'
-                                }}
-                            >
-                                <i className="bi bi-house-door me-2"></i>
+                <section className="text-center">
+                    <h2 className="text-3xl font-bold tracking-tight">Ready to Start Your Movie Journey?</h2>
+                    <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+                        Join thousands of movie enthusiasts who have made MovieWebshop their go-to destination for cinema.
+                    </p>
+                    <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                        <Button size="lg" className="h-12 px-8" asChild>
+                            <Link to="/">
+                                <Home />
                                 Browse Movies
-                            </a>
-                            <a
-                                href="/contact"
-                                className="btn btn-outline-primary btn-lg px-5 py-3 fw-semibold"
-                                style={{ borderRadius: '12px', textDecoration: 'none' }}
-                            >
-                                <i className="bi bi-envelope me-2"></i>
+                            </Link>
+                        </Button>
+                        <Button size="lg" variant="outline" className="h-12 px-8" asChild>
+                            <a href="mailto:support@movieshop.com">
+                                <Mail />
                                 Contact Us
                             </a>
-                        </div>
+                        </Button>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
     );

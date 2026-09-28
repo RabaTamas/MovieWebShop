@@ -1,0 +1,663 @@
+{
+  "//": [
+    "FELHOS VALTOZAT (Azure Container Apps) — generalt fajl, ne kezzel szerkeszd.",
+    "",
+    "Elteresek az ocelot.json-hoz kepest:",
+    "1) Teljes FQDN: <app>.<kornyezet-domain>. A rovid szolgaltatasnev nem oldodik fel,",
+    "   es '.internal.' aldomain ebben a kornyezettipusban nem letezik.",
+    "2) HTTPS es 443-as port: a belso ingress a titkositatlan HTTP-t 301-gyel atiranyitja.",
+    "3) UpstreamHeaderTransform/Host: az ingress a Host fejlec alapjan valaszt alkalmazast."
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://gateway.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+  },
+  "Routes": [
+    {
+      "//": "── User Service ─────────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Auth/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Auth/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/User/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/User/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Push/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Push/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Address/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Address/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Address",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Address",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": "Magasabb prioritás, hogy megelőzze az általánosabb admin mintákat",
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/addresses/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/admin/addresses/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/addresses",
+      "UpstreamHttpMethod": [
+        "GET",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/admin/addresses",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "userservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": "── Catalog Service ──────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Movie/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Movie/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Movie",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Movie",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Category/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Category/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Category",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Category",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Review/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Review/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Review",
+      "UpstreamHttpMethod": [
+        "GET",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Review",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Search/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Search/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Search",
+      "UpstreamHttpMethod": [
+        "GET",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Search",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": "Videófeltöltés: 500 MB-os fájlok, ezért hosszabb időtúllépés kell",
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/Video/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/admin/Video/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "QoSOptions": {
+        "TimeoutValue": 600000,
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 10000
+      },
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": "── Order Service ────────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Order/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Order/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Order",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Order",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/ShoppingCart/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/ShoppingCart/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/ShoppingCart",
+      "UpstreamHttpMethod": [
+        "GET",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/ShoppingCart",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Payment/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Payment/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Recommendation",
+      "UpstreamHttpMethod": [
+        "GET",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Recommendation",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/Orders/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/admin/Orders/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/Orders",
+      "UpstreamHttpMethod": [
+        "GET",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/admin/Orders",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "Priority": 10,
+      "UpstreamPathTemplate": "/api/admin/shopping-carts/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/admin/shopping-carts/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "orderservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": "── Auction Service ──────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Auction/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Auction/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/api/Auction",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Auction",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": [
+        "SignalR két lépésben csatlakozik: előbb egy HTTP POST /negotiate,",
+        "utána a WebSocket upgrade. Mindkettőt külön útvonalként kell átengedni,",
+        "és a negotiate-nek magasabb prioritás kell, hogy ne a ws-route nyelje el."
+      ],
+      "Priority": 10,
+      "UpstreamPathTemplate": "/hubs/auction/negotiate",
+      "UpstreamHttpMethod": [
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/hubs/auction/negotiate",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/hubs/auction",
+      "DownstreamPathTemplate": "/hubs/auction",
+      "DownstreamScheme": "wss",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "auctionservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": "Watch Party hub — a Catalog Service-ben él, mert a lejátszáshoz tartozik",
+      "Priority": 10,
+      "UpstreamPathTemplate": "/hubs/watchparty/negotiate",
+      "UpstreamHttpMethod": [
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/hubs/watchparty/negotiate",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "UpstreamPathTemplate": "/hubs/watchparty",
+      "DownstreamPathTemplate": "/hubs/watchparty",
+      "DownstreamScheme": "wss",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "UpstreamHeaderTransform": {
+        "Host": "catalogservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    },
+    {
+      "//": "── Chat Service ─────────────────────────────────────────────",
+      "UpstreamPathTemplate": "/api/Chat/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/api/Chat/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "chatservice.gentlefield-3367b248.francecentral.azurecontainerapps.io",
+          "Port": 443
+        }
+      ],
+      "QoSOptions": {
+        "TimeoutValue": 90000,
+        "ExceptionsAllowedBeforeBreaking": 5,
+        "DurationOfBreak": 10000
+      },
+      "UpstreamHeaderTransform": {
+        "Host": "chatservice.gentlefield-3367b248.francecentral.azurecontainerapps.io"
+      }
+    }
+  ]
+}

@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import AddressForm from "../components/AddressForm";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import StripeCheckout from '../components/StripeCheckout';
 import API_BASE_URL from "../config/api";
+import { toast } from "sonner";
+import { CreditCard, Film, Lock, ShoppingCart, Trash2 } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { EmptyState, PageContainer, PageHeader } from "@/components/ui/page";
 
 const Cart = () => {
     const { token } = useAuth();
@@ -74,7 +82,7 @@ const Cart = () => {
                 return res.json();
             })
             .then(saved => setBillingAddress(saved))
-            .catch(err => alert(err.message));
+            .catch(err => toast.error(err.message));
     };
 
     const removeItem = (movieId) => {
@@ -90,48 +98,21 @@ const Cart = () => {
             })
             .catch(err => {
                 console.error(err);
-                alert('Error removing item');
+                toast.error('Error removing item');
             });
     };
 
     const total = items.reduce((sum, item) => sum + item.priceAtOrder, 0);
 
-    //const initiatePayment = async () => {
-    //    if (!billingAddress || !shippingAddress) {
-    //        alert("Hi�nyz� sz�ml�z�si vagy sz�ll�t�si c�m.");
-    //        return;
-    //    }
-
-    //    try {
-    //        const response = await fetch('https://localhost:7289/api/Payment/create-payment-intent', {
-    //            method: 'POST',
-    //            headers: {
-    //                'Content-Type': 'application/json',
-    //                Authorization: `Bearer ${token}`
-    //            },
-    //            body: JSON.stringify({ amount: total })
-    //        });
-
-    //        const data = await response.json();
-    //        setClientSecret(data.clientSecret);
-    //        setShowPayment(true);
-    //    } catch (err) {
-    //        alert("Hiba a fizet�s ind�t�sakor: " + err.message);
-    //    }
-    //};
-
     const initiatePayment = async () => {
         if (!billingAddress) {
-            alert("Missing billing address.");
+            toast.error("Missing billing address.");
             return;
         }
 
         try {
-            console.log("?? Total amount:", total);
-
-            // Teszt: minimum �sszeg ellen�rz�se
-            const testAmount = Math.max(total, 100); // Minimum 100 HUF
-            console.log("?? Sending amount:", testAmount);
+            // Stripe minimum amount check (minimum 100 HUF)
+            const testAmount = Math.max(total, 100);
 
             const response = await fetch(`${API_BASE_URL}/api/Payment/create-payment-intent`, {
                 method: 'POST',
@@ -144,18 +125,17 @@ const Cart = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("? Server error:", errorData);
-                alert(`Server error: ${errorData.error || 'Unknown error'}`);
+                console.error("Server error:", errorData);
+                toast.error(`Server error: ${errorData.error || 'Unknown error'}`);
                 return;
             }
 
             const data = await response.json();
-            console.log("? Payment Intent created:", data);
             setClientSecret(data.clientSecret);
             setShowPayment(true);
         } catch (err) {
-            console.error("? Exception:", err);
-            alert("Payment initiation error: " + err.message);
+            console.error("Exception:", err);
+            toast.error("Payment initiation error: " + err.message);
         }
     };
 
@@ -167,7 +147,7 @@ const Cart = () => {
             });
 
             if (error) {
-                alert("Payment error: " + error.message);
+                toast.error("Payment error: " + error.message);
                 return;
             }
 
@@ -198,84 +178,133 @@ const Cart = () => {
                 if (!orderResponse.ok) throw new Error("Order failed.");
 
                 const order = await orderResponse.json();
-                alert("Sikeres rendel�s! Rendel�s azonos�t�: " + order.id);
+                toast.success("Sikeres rendelés! Rendelés azonosító: " + order.id, {
+                    action: { label: "My Movies", onClick: () => window.location.assign("/my-movies") },
+                });
                 setShowPayment(false);
                 fetchCart();
             }
         } catch (err) {
-            alert("Error occurred: " + err.message);
+            toast.error("Error occurred: " + err.message);
         }
     };
 
-    // CSAK EGY early return legyen!
+    // Only one early return
     if (!items || items.length === 0) {
         return (
-            <div className="container mt-4">
-                <h2>Your cart is empty.</h2>
-            </div>
+            <PageContainer size="md">
+                <EmptyState
+                    icon={ShoppingCart}
+                    title="Your cart is empty."
+                    description="Find something great to watch and add it to your cart."
+                >
+                    <Button asChild>
+                        <Link to="/">Browse movies</Link>
+                    </Button>
+                </EmptyState>
+            </PageContainer>
         );
     }
 
     return (
-        <div className="container mt-4">
-            <div className="row">
-                <div className="col-md-8">
-                    <h2>Your Cart</h2>
-                    <table className="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Price (Ft)</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items.map(item => (
-                                <tr key={item.movieId}>
-                                    <td>{item.title}</td>
-                                    <td>{item.priceAtOrder}</td>
-                                    <td>
-                                        <button className="btn btn-sm btn-danger"
-                                            onClick={() => removeItem(item.movieId)}
-                                        >Remove</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <h4>Total: {total} Ft</h4>
+        <PageContainer>
+            <PageHeader title="Your Cart" icon={ShoppingCart} description={`${items.length} item${items.length !== 1 ? "s" : ""} in your cart`} />
 
-                    {!showPayment ? (
-                        <button
-                            className="btn btn-primary mt-3"
-                            disabled={!billingAddress || items.length === 0}
-                            onClick={initiatePayment}
-                        >
-                            Proceed to Payment
-                        </button>
-                    ) : (
-                        <div className="mt-4">
-                            <h4>Payment</h4>
-                            {stripePromise && clientSecret && (
-                                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                                    <StripeCheckout
-                                        amount={total}
-                                        onSuccess={handlePaymentSuccess}
-                                        onError={(err) => alert("Payment error: " + err)}
-                                    />
-                                </Elements>
-                            )}
-                            <button
-                                className="btn btn-secondary mt-2"
-                                onClick={() => setShowPayment(false)}
-                            >
-                                Cancel Payment
-                            </button>
-                        </div>
+            <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px]">
+                <div className="space-y-6">
+                    <Card className="gap-0 py-0">
+                        <ul className="divide-y">
+                            {items.map(item => (
+                                <li key={item.movieId} className="flex items-center gap-4 p-4">
+                                    <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted">
+                                        <Film className="size-5 text-muted-foreground" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <Link to={`/movies/${item.movieId}`} className="line-clamp-1 font-medium hover:text-primary">
+                                            {item.title}
+                                        </Link>
+                                        <p className="text-sm text-muted-foreground">Digital copy · streaming included</p>
+                                    </div>
+                                    <span className="font-semibold whitespace-nowrap">{formatPrice(item.priceAtOrder)}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        className="text-muted-foreground hover:text-destructive"
+                                        aria-label="Remove"
+                                        title="Remove"
+                                        onClick={() => removeItem(item.movieId)}
+                                    >
+                                        <Trash2 />
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    </Card>
+
+                    {showPayment && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <CreditCard className="size-5 text-primary" /> Payment
+                                </CardTitle>
+                                <CardDescription className="flex items-center gap-1.5">
+                                    <Lock className="size-3.5" /> Secure payment powered by Stripe
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {stripePromise && clientSecret && (
+                                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                                        <StripeCheckout
+                                            amount={total}
+                                            onSuccess={handlePaymentSuccess}
+                                            onError={(err) => toast.error("Payment error: " + err)}
+                                        />
+                                    </Elements>
+                                )}
+                                <Button variant="outline" className="w-full" onClick={() => setShowPayment(false)}>
+                                    Cancel Payment
+                                </Button>
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
 
-                <div className="col-md-4">
+                <div className="space-y-6 lg:sticky lg:top-24">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Order summary</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                                <span>Items ({items.length})</span>
+                                <span>{formatPrice(total)}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex items-baseline justify-between">
+                                <span className="font-medium">Total</span>
+                                <span className="text-2xl font-bold">{formatPrice(total)}</span>
+                            </div>
+                            {!showPayment && (
+                                <>
+                                    <Button
+                                        size="lg"
+                                        className="mt-2 w-full"
+                                        disabled={!billingAddress || items.length === 0}
+                                        onClick={initiatePayment}
+                                    >
+                                        <Lock />
+                                        Proceed to Payment
+                                    </Button>
+                                    {!billingAddress && (
+                                        <p className="text-center text-xs text-muted-foreground">
+                                            Save a billing address to continue.
+                                        </p>
+                                    )}
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     <AddressForm
                         title="Billing Address"
                         initialAddress={billingAddress}
@@ -283,7 +312,7 @@ const Cart = () => {
                     />
                 </div>
             </div>
-        </div>
+        </PageContainer>
     );
 };
 

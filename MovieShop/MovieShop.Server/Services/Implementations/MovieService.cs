@@ -156,6 +156,9 @@ namespace MovieShop.Server.Services.Implementations
 
                 await _context.Movies.AddAsync(movie);
                 await _context.SaveChangesAsync();
+
+                // The generated id is needed by the caller (CreatedAtAction and the new movie push notification)
+                movieDto.Id = movie.Id;
                 return true;
             }
             catch

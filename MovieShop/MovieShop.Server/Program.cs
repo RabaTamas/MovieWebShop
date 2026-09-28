@@ -134,6 +134,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IStripeService, StripeService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddScoped<ITranscodingService, TranscodingService>();
+builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
 builder.Services.AddScoped<IStreamingService, StreamingService>();
 
 // Configure Hangfire for background jobs
