@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Content Include="..\..\MovieShop.Gateway\ocelot.json" Link="ocelot.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\MovieShop.Gateway\ocelot.cloud.json" Link="ocelot.cloud.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

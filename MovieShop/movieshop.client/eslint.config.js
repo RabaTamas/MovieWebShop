@@ -32,4 +32,17 @@ export default [
       ],
     },
   },
+  {
+    // Vitest `globals: true` mellett a describe/it/expect/vi import nélkül elérhető
+    files: ['src/**/*.test.{js,jsx}', 'src/test/**'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly', it: 'readonly', test: 'readonly', expect: 'readonly', vi: 'readonly',
+        beforeEach: 'readonly', afterEach: 'readonly', beforeAll: 'readonly', afterAll: 'readonly',
+      },
+    },
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ]

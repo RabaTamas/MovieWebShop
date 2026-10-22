@@ -1,0 +1,104 @@
+name: CI
+
+# Build, lint és automatikus tesztek minden kódváltozásnál.
+# Azure-hoz nem nyúl: a kitelepítés (CD) külön workflow lesz.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "MovieShop/services/**"
+      - "MovieShop/movieshop.client/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "MovieShop/services/**"
+      - "MovieShop/movieshop.client/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+# Ugyanarra az ágra érkező újabb push leállítja az elavult futást
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (.NET 8 – build + xUnit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: MovieShop/services
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('MovieShop/services/**/*.csproj', 'MovieShop/services/**/Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore MovieShop.Microservices.sln
+
+      - name: Build
+        run: dotnet build MovieShop.Microservices.sln --no-restore --configuration Release
+
+      - name: Test
+        run: >
+          dotnet test MovieShop.Microservices.sln --no-build --configuration Release
+          --logger trx --results-directory TestResults
+          --collect:"XPlat Code Coverage"
+
+      - name: Teszteredmények és lefedettség feltöltése
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: MovieShop/services/TestResults
+          retention-days: 14
+
+  frontend:
+    name: Frontend (lint + Vitest + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: MovieShop/movieshop.client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: MovieShop/movieshop.client/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Csak a hibák buktatják el a futást, a figyelmeztetések nem
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test:coverage
+
+      # A build olyan hibákat is elkap (pl. hibás import), amit a tesztek nem érintenek
+      - name: Build
+        run: npm run build
+
+      - name: Lefedettségi riport feltöltése
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: MovieShop/movieshop.client/coverage
+          retention-days: 14

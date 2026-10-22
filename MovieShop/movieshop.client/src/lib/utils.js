@@ -9,7 +9,7 @@ export function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
-/** Ár megjelenítése forintban, ezres tagolással: 1099 → "1 099 Ft" */
+/** Ár megjelenítése forintban, ezres tagolással: 25000 → "25 000 Ft" (négy jegyig tagolatlan: 1099 Ft) */
 export function formatPrice(value) {
     if (value == null) return "";
     return `${Number(value).toLocaleString("hu-HU")} Ft`;

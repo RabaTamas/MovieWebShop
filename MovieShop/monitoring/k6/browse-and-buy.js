@@ -24,6 +24,8 @@ const hibaarany = new Rate("uzleti_hibak");
 const bejelentkezesIdo = new Trend("bejelentkezes_ido", true);
 
 export const options = {
+    // A p99 alapból nincs az összegzésben — a dolgozathoz viszont kell
+    summaryTrendStats: ["avg", "min", "med", "p(95)", "p(99)", "max"],
     stages: [
         { duration: "1m", target: Math.round(VUS / 2) }, // felfutás
         { duration: "3m", target: VUS },                 // tartás
@@ -64,7 +66,12 @@ export default function (data) {
 
     group("bongeszes", () => {
         const id = Math.floor(Math.random() * 3) + 1;
-        jo(http.get(`${BASE}/api/Movie/${id}`, { tags: { nev: "filmadatlap" } }), "filmadatlap");
+        // Szándékosan NEM a GET /api/Movie/{id} végpontot hívjuk: az minden kérésnél
+        // szinkron TMDB-hívást csinál (MovieService.GetMovieByIdAsync → SearchMovieAsync),
+        // cache nélkül. Az így mért késleltetés az internetről árulkodna, nem a rendszerről.
+        // Helyette a filmadatlap két adatbázis-alapú összetevője: kategóriaszűrés és értékelések.
+        jo(http.get(`${BASE}/api/Movie/category/${id}`, { tags: { nev: "kategoriaszuro" } }), "kategoriaszuro");
+        jo(http.get(`${BASE}/api/Review/movie/${id}`, { tags: { nev: "ertekelesek" } }), "ertekelesek");
         jo(http.get(`${BASE}/api/Search?q=the`, { tags: { nev: "kereses" } }), "kereses");
     });
     sleep(Math.random() * 3 + 1);
@@ -75,8 +82,9 @@ export default function (data) {
     sleep(Math.random() * 2 + 1);
 
     if (data.token) {
+        // A kosár végpontja /api/ShoppingCart (ShoppingCartController), nem /api/Cart
         group("kosar", () => {
-            const res = http.get(`${BASE}/api/Cart`, { headers: auth, tags: { nev: "kosar" } });
+            const res = http.get(`${BASE}/api/ShoppingCart`, { headers: auth, tags: { nev: "kosar" } });
             jo(res, "kosar");
         });
         sleep(1);

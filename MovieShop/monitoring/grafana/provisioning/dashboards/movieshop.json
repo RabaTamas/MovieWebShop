@@ -51,13 +51,13 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
       "datasource": { "type": "prometheus", "uid": "movieshop-prometheus" },
       "fieldConfig": {
-        "defaults": { "unit": "percentunit", "min": 0, "custom": { "lineWidth": 2, "fillOpacity": 10 } },
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1, "custom": { "lineWidth": 2, "fillOpacity": 10 } },
         "overrides": []
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (service) (rate(http_requests_received_total{code=~\"5..\"}[1m])) / clamp_min(sum by (service) (rate(http_requests_received_total[1m])), 0.001)",
+          "expr": "clamp_max(sum by (service) (rate(http_requests_received_total{code=~\"5..\"}[1m])) / sum by (service) (rate(http_requests_received_total[1m])), 1)",
           "legendFormat": "{{service}}"
         }
       ]
@@ -93,7 +93,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (service) (rate(process_cpu_seconds_total[1m]))",
+          "expr": "sum by (service) (rate(process_cpu_seconds_total{job=\"movieshop-services\"}[1m]))",
           "legendFormat": "{{service}}"
         }
       ]
@@ -113,24 +113,6 @@
           "refId": "A",
           "expr": "sum by (service) (process_working_set_bytes)",
           "legendFormat": "{{service}}"
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
-      "title": "Konténerek processzorhasználata (cAdvisor)",
-      "description": "Alkalmazásfüggetlen mérés: itt az adatbázis, a RabbitMQ és az Elasticsearch is látszik.",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
-      "datasource": { "type": "prometheus", "uid": "movieshop-prometheus" },
-      "fieldConfig": {
-        "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 6 } },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"movieshop-ms-.+\"}[1m]))",
-          "legendFormat": "{{name}}"
         }
       ]
     }

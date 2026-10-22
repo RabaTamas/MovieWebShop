@@ -391,18 +391,6 @@ services:
       - movieshop-ms-network
     restart: unless-stopped
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
-    container_name: movieshop-ms-cadvisor
-    privileged: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /:/rootfs:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    networks:
-      - movieshop-ms-network
-    restart: unless-stopped
-
 networks:
   movieshop-ms-network:
     driver: bridge

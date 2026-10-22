@@ -31,12 +31,10 @@ scrape_configs:
       - targets: [chatservice:8080]
         labels: { service: chatservice, role: backend }
 
-  # ── Konténerszintű CPU/memória (alkalmazásmódosítás nélkül) ──────────────────
-  # A cAdvisor minden konténerről ad erőforrás-metrikát, így az is látszik, hogy
-  # terhelés alatt melyik service éri el a CPU- vagy memóriaplafont.
-  - job_name: containers
-    static_configs:
-      - targets: [cadvisor:8080]
+  # Megjegyzés: konténerszintű méréshez a cAdvisor lenne kézenfekvő, de Docker
+  # Desktop for Windows alatt csak a gazdagép összesített adatát adja vissza
+  # (egyetlen idősor, id="/"), konténerenkénti bontás nélkül — ezért kikerült.
+  # A service-enkénti CPU- és memóriahasználatot a .NET folyamatmetrikák adják.
 
   # ── Maga a Prometheus (hasznos annak ellenőrzésére, hogy él-e a gyűjtés) ─────
   - job_name: prometheus

@@ -49,12 +49,15 @@ const Chatbot = () => {
     const [lang, setLang] = useState('en-US');
     const toggleLang = () => setLang(prev => prev === 'en-US' ? 'hu-HU' : 'en-US');
 
-    // External trigger: open chatbot and optionally send a message
+    // External trigger: open chatbot and optionally send a message.
+    // Ref, mert a listener egyszer regisztrálódik: közvetlen hívással az első renderkori
+    // sendMessage futna, a bejelentkezés előtti (null) tokennel.
+    const sendMessageRef = useRef(null);
     useEffect(() => {
         const handler = (e) => {
             setIsOpen(true);
             if (e.detail?.message) {
-                setTimeout(() => sendMessage(e.detail.message), 300);
+                setTimeout(() => sendMessageRef.current?.(e.detail.message), 300);
             }
         };
         window.addEventListener('chatbot:open', handler);
@@ -222,6 +225,7 @@ const Chatbot = () => {
             setLoading(false);
         }
     };
+    sendMessageRef.current = sendMessage;
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && input.trim() && !loading) sendMessage(input);

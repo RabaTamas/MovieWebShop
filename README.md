@@ -16,7 +16,9 @@ Diplomatervezési projekt — egy olyan webalkalmazás, amely egyszerre valósí
 - [Projektstruktúra](#projektstruktúra)
 - [Adatmodell](#adatmodell)
 - [Mikroszervíz architektúra](#mikroszervíz-architektúra)
+- [PWA (telepíthető alkalmazás)](#pwa-telepíthető-alkalmazás)
 - [Felhőalapú telepítés (Azure)](#felhőalapú-telepítés-azure)
+- [Megfigyelés és terhelésteszt](#megfigyelés-és-terhelésteszt)
 - [Továbbfejlesztési terv](#továbbfejlesztési-terv)
 
 ---
@@ -111,6 +113,7 @@ Néhány kiemelt tervezési döntés:
 | **Média** | FFmpeg, HLS (RFC 8216), Azure Blob Storage |
 | **Külső API-k** | Stripe, Groq (`openai/gpt-oss-20b` és `gpt-oss-120b`), TMDB |
 | **Infrastruktúra** | Docker, docker-compose, nginx |
+| **Megfigyelés** | `prometheus-net`, Prometheus, Grafana, k6 (terhelésteszt) |
 | **Dokumentáció** | Swagger / Swashbuckle (OpenAPI) |
 
 ---
@@ -228,6 +231,7 @@ MovieWebShop/
 │   │       └── config/              # API base URL
 │   ├── nginx-streaming/             # nginx secure_link streaming konténer
 │   ├── movie-files/                 # videófájlok (volume mount)
+│   ├── monitoring/                  # Prometheus, Grafana provisioning, k6 szkriptek
 │   └── docker-compose.yml
 └── docs_*.md                        # diplomaterv fejezetei
 ```
@@ -276,13 +280,15 @@ A monolit backend szét van bontva **öt önállóan deployolható szolgáltatá
 | Order | 5203 | kosár, rendelés, Stripe, ajánlórendszer |
 | Auction | 5204 | aukciók, licitek, SignalR hub |
 | Chat | 5205 | Groq chatbot (gpt-oss), agentic eszközhívás |
+| Prometheus | 9090 | metrikagyűjtés a hat service-től |
+| Grafana | 3002 | metrikák megjelenítése (bejelentkezés nélkül) |
 
 ```bash
 # A MovieShop/ mappából
 docker compose -f docker-compose.microservices.yml up -d --build
 ```
 
-Minden port el van tolva a monolit stackhez képest, tehát **a kettő egyszerre futtatható és összemérhető** — ez a feladatkiírás utolsó pontjához (értékelés alternatív megközelítésekkel) szükséges.
+Minden port el van tolva a monolit stackhez képest, tehát **a kettő egyszerre futtatható** — a monolit a dolgozat kiindulási állapotát dokumentálja, a mikroszervíz változat pedig az átalakítás eredményét. Számszerű összehasonlító mérés a kettő között szándékosan nem készül.
 
 A szétbontás kulcsa az eseményvezérelt adatreplikáció: a Catalog `MovieChanged` eseményt publikál, amiből az Order `MovieSnapshot` táblát tart karban — így az ajánlórendszer kollaboratív szűrése lokális join maradt. Visszafelé az Order `OrderCompleted`-et publikál, amiből a Catalog `Entitlements` projekciót épít, így a streaming jogosultság-ellenőrzése sem hálózati hívás.
 
@@ -371,6 +377,52 @@ az group delete -n movieshop-cloud-rg --yes
 
 ---
 
+## Megfigyelés és terhelésteszt
+
+A **mikroszervíz stackhez** tartozik, és **lokálisan** fut — a felhős példány nullára skálázódik, ott a mérés a hidegindulást mutatná, nem a rendszert.
+
+Minden .NET service a `prometheus-net` csomaggal `/metrics` végponton adja a válaszidőt, kérésszámot, hibakódokat, valamint a processzor- és memóriahasználatot. A bekötés a közös `ServiceDefaults` projektben van (`MapMovieShopMetrics`), így service-enként egyetlen sor; a gatewayen middleware-ként, mert az Ocelot elnyelné a végpont-alapú útvonalat. A Prometheus 10 másodpercenként gyűjt, a Grafana dashboard (`monitoring/grafana/provisioning/`) automatikusan betöltődik.
+
+> **Miért `prometheus-net` és nem OpenTelemetry:** az OpenTelemetry Prometheus-exportere máig csak előzetes (beta) kiadásban létezik, a projekt viszont mindenhol stabil verziókat rögzít.
+
+```bash
+# A MovieShop/ mappából
+docker compose -f docker-compose.microservices.yml up -d
+# Prometheus: http://localhost:9090   Grafana: http://localhost:3002
+
+# Terhelésteszt a stack belső hálózatán (a monitoring/k6 mappából)
+docker run --rm -i --network movieshop-ms_movieshop-ms-network \
+  -e BASE=http://gateway:8080 -e VUS=30 grafana/k6 run - < browse-and-buy.js
+```
+
+A [k6 forgatókönyv](MovieShop/monitoring/k6/browse-and-buy.js) azt csinálja, amit egy valódi felhasználó: főoldal, kategóriaszűrés, értékelések, keresés, aukciók, kosár — a lépések között gondolkodási idővel. **30 párhuzamos felhasználó, 5 perc** (1 perc felfutás, 3 perc tartás, 1 perc leállás), 687 teljes látogatás:
+
+| Kérések | Válaszidő átlag | p95 | p99 | Hibaarány |
+|---|---|---|---|---|
+| 4810 db (14,8 /mp, csúcson 25,2) | 62 ms | 142 ms | 291 ms | **0,00%** |
+
+Service-enkénti bontásban:
+
+| Service | p95 | átlag | kérés/mp | processzor | memória |
+|---|---|---|---|---|---|
+| gateway | 0,126 s | 53 ms | 15,7 | 0,134 mag | 212 MiB |
+| catalogservice | 0,126 s | 46 ms | 11,0 | 0,272 mag | 397 MiB |
+| auctionservice | 0,088 s | 33 ms | 2,1 | 0,089 mag | 264 MiB |
+| orderservice | 0,059 s | 21 ms | 2,1 | 0,149 mag | 261 MiB |
+
+Épp ezért a bontásért érdemes a megfigyelés:
+
+- **A gateway útválasztása nem kerül érzékelhető késleltetésbe** — 53 ms a gateway átlaga, 46 ms a katalógusé, a p95-ben pedig nincs mérhető különbség.
+- **A gateway kérésszáma a mögöttes service-ek összege** (15,7 ≈ 11,0 + 2,1 + 2,1), tehát az útválasztás nem duplikál.
+- **A katalógus a forró pont** (a forgalom 70%-a, a legnagyobb CPU és memória) — és épp ez van egy példányra korlátozva a SignalR miatt; a mérés így számszerűen alátámasztja, miért a Redis backplane a következő lépés.
+- **Bemelegedés:** az első 20 másodpercben 2,87 s a p95, negyven másodperc alatt beáll 0,12 s-ra.
+
+**Vállalt korlátok:** konténerszintű mérés nincs (a cAdvisor Docker Desktop for Windows alatt csak a gazdagép összesített adatát adja vissza, ezért kikerült); a k6 ugyanazon a gépen fut, mint a mért rendszer, ezért 30 virtuális felhasználóval mérünk, nem 500-zal; az EF Core lekérdezések ideje és a streaming sávszélessége nincs külön műszerezve; a töréspont nincs meghatározva. A mért számok erre a gépre és erre a terhelési profilra érvényesek.
+
+A teljes fejezetleírás — eszközválasztás és indoklás, PromQL-lekérdezések, módszertan, a mérés során talált hibák — itt: **[MONITORING.md](MovieShop/MONITORING.md)**.
+
+---
+
 ## Továbbfejlesztési terv
 
 A következő félévre tervezett irányok:
@@ -378,7 +430,9 @@ A következő félévre tervezett irányok:
 - **CI/CD (GitHub Actions)** — a felhős telepítés jelenleg kézi lépésekkel történik (lásd [Felhőalapú telepítés](#felhőalapú-telepítés-azure)); a `main` branchre pusholt változások automatikus újraépítése és telepítése hátravan
 - **Redis backplane** — a SignalR hubok és a chatbot munkamenetei jelenleg memóriában élnek, ezért a service-ek egyetlen példányra korlátozottak
 - **Redis cache** a gyakran lekérdezett adatokra (népszerű filmek, kategóriák, chatbot kontextus)
-- **Monitoring és terheléstesztelés** — Prometheus + Grafana metrikák, k6 terhelési szcenáriók az architekturális döntések számszerűsítéséhez
+- **TMDB-válaszok gyorsítótárazása** — a `GET /api/Movie/{id}` végpont minden egyes kérésnél szinkron TMDB-hívást csinál, cache nélkül; a pontszám és a megjelenési dátum naponta egyszeri frissítése is elég lenne
+- **Adatbázis-szintű metrikák** — jelenleg a service teljes válaszideje látszik, az EF Core lekérdezések ideje nem különül el (lásd [Megfigyelés és terhelésteszt](#megfigyelés-és-terhelésteszt))
+
 ---
 
 ## Szerző
