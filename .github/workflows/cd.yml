@@ -146,27 +146,34 @@ jobs:
           az containerapp update -n "${{ matrix.app }}" -g "$RESOURCE_GROUP" --image "$IMAGE" \
             --query "properties.latestRevisionName" -o tsv
 
-      - name: Várakozás, amíg az új revízió kész
+      # A szolgáltatások nullára skálázódnak: forgalom nélkül a revíziónak nincs futó példánya,
+      # ezért itt csak azt várjuk meg, hogy létrejöjjön (Provisioned) és az új image-et futtassa.
+      # Hogy ténylegesen el is indul, azt a füstteszt bemelegítése ellenőrzi.
+      - name: Várakozás, amíg az új revízió létrejön
         run: |
           set -euo pipefail
           for i in $(seq 1 60); do
             APP_JSON=$(az containerapp show -n "${{ matrix.app }}" -g "$RESOURCE_GROUP" -o json)
             LATEST=$(echo "$APP_JSON" | jq -r '.properties.latestRevisionName // ""')
-            READY=$(echo "$APP_JSON" | jq -r '.properties.latestReadyRevisionName // ""')
-            STATE=$(echo "$APP_JSON" | jq -r '.properties.provisioningState // ""')
-            echo "[$i] legújabb: $LATEST · kész: $READY · állapot: $STATE"
-            if [ "$LATEST" = "$READY" ]; then echo "✔ $LATEST kész"; exit 0; fi
+            RUNNING_IMAGE=$(echo "$APP_JSON" | jq -r '.properties.template.containers[0].image // ""')
             REV_STATE=$(az containerapp revision show -n "${{ matrix.app }}" -g "$RESOURCE_GROUP" --revision "$LATEST" \
               --query "properties.provisioningState" -o tsv 2>/dev/null || true)
-            if [ "$REV_STATE" = "Failed" ]; then echo "::error::A(z) $LATEST revízió nem indult el"; exit 1; fi
+            echo "[$i] revízió: $LATEST · állapot: $REV_STATE"
+            if [ "$REV_STATE" = "Failed" ]; then echo "::error::A(z) $LATEST revízió nem jött létre"; exit 1; fi
+            if [ "$REV_STATE" = "Provisioned" ] && [ "$RUNNING_IMAGE" = "$IMAGE" ]; then
+              echo "✔ $LATEST létrejött: $RUNNING_IMAGE"; exit 0
+            fi
             sleep 10
           done
-          echo "::error::A revízió 10 percen belül sem lett kész"; exit 1
+          echo "::error::A revízió 10 percen belül sem jött létre"; exit 1
 
   smoke-test:
     name: Füstteszt a felhőben
     needs: [changes, deploy]
-    if: needs.changes.outputs.any == 'true'
+    # Kézi indításnál akkor is fusson, ha nem volt mit kitelepíteni (a felhős állapot ellenőrzése)
+    if: >-
+      always() && needs.changes.result == 'success' && needs.deploy.result != 'failure' &&
+      (needs.changes.outputs.any == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
