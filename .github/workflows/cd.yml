@@ -1,0 +1,220 @@
+name: CD
+
+# Kitelepítés az Azure Container Appsba, ha a CI a main ágon zöld lett.
+# Csak a megváltozott szolgáltatások épülnek újra: minden app a futó image címkéjéből
+# (commit SHA) tudja, melyik commit fut, és ahhoz képest nézzük a változást.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: "Minden szolgáltatás újraépítése és kitelepítése"
+        type: boolean
+        default: false
+
+# Egyszerre csak egy kitelepítés fusson; az újabb megvárja a régit, nem szakítja meg
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # OIDC-token az Azure-bejelentkezéshez (tárolt jelszó nélkül)
+  contents: read
+
+env:
+  RESOURCE_GROUP: movieshop-cloud-rg
+  ACR_NAME: movieshopacr
+  GATEWAY_URL: https://gateway.gentlefield-3367b248.francecentral.azurecontainerapps.io
+  FRONTEND_URL: https://frontend.gentlefield-3367b248.francecentral.azurecontainerapps.io
+
+jobs:
+  changes:
+    name: Megváltozott szolgáltatások
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      any: ${{ steps.detect.outputs.any }}
+      sha: ${{ steps.detect.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Változások meghatározása
+        id: detect
+        env:
+          DEPLOY_ALL: ${{ inputs.deploy_all || 'false' }}
+        run: |
+          set -euo pipefail
+          HEAD_SHA=$(git rev-parse HEAD)
+          echo "sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+          # app | Dockerfile | build-kontextus | saját mappa
+          APPS="
+          userservice|MovieShop.UserService/Dockerfile|MovieShop/services|MovieShop/services/MovieShop.UserService
+          catalogservice|MovieShop.CatalogService/Dockerfile|MovieShop/services|MovieShop/services/MovieShop.CatalogService
+          orderservice|MovieShop.OrderService/Dockerfile|MovieShop/services|MovieShop/services/MovieShop.OrderService
+          auctionservice|MovieShop.AuctionService/Dockerfile|MovieShop/services|MovieShop/services/MovieShop.AuctionService
+          chatservice|MovieShop.ChatService/Dockerfile|MovieShop/services|MovieShop/services/MovieShop.ChatService
+          gateway|MovieShop.Gateway/Dockerfile|MovieShop/services|MovieShop/services/MovieShop.Gateway
+          frontend|Dockerfile|MovieShop/movieshop.client|MovieShop/movieshop.client
+          "
+          # A közös könyvtárak minden backend-szolgáltatásba belefordulnak
+          SHARED="MovieShop/services/MovieShop.Contracts MovieShop/services/MovieShop.ServiceDefaults"
+
+          ITEMS="[]"
+          while IFS='|' read -r APP DOCKERFILE CONTEXT DIR; do
+            APP=$(echo "$APP" | xargs); [ -z "$APP" ] && continue
+            PATHS="$DIR"
+            [ "$APP" != "frontend" ] && PATHS="$DIR $SHARED"
+
+            IMAGE=$(az containerapp show -n "$APP" -g "$RESOURCE_GROUP" --query "properties.template.containers[0].image" -o tsv)
+            DEPLOYED="${IMAGE##*:}"
+
+            REASON=""
+            if [ "$DEPLOY_ALL" = "true" ]; then
+              REASON="kézi teljes kitelepítés"
+            elif ! [[ "$DEPLOYED" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$DEPLOYED^{commit}" 2>/dev/null; then
+              REASON="a futó image ($DEPLOYED) nem commitból épült"
+            elif ! git diff --quiet "$DEPLOYED" "$HEAD_SHA" -- $PATHS; then
+              REASON="változott: ${DEPLOYED:0:7} → ${HEAD_SHA:0:7}"
+            fi
+
+            if [ -n "$REASON" ]; then
+              echo "✔ $APP – $REASON"
+              ITEMS=$(echo "$ITEMS" | jq -c --arg a "$APP" --arg f "$DOCKERFILE" --arg c "$CONTEXT" '. + [{app:$a, dockerfile:$f, context:$c}]')
+            else
+              echo "· $APP – változatlan (${DEPLOYED:0:7})"
+            fi
+          done <<< "$APPS"
+
+          echo "matrix={\"include\":$ITEMS}" >> "$GITHUB_OUTPUT"
+          echo "any=$([ "$ITEMS" = "[]" ] && echo false || echo true)" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Build + kitelepítés – ${{ matrix.app }}
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJson(needs.changes.outputs.matrix) }}
+    env:
+      IMAGE: movieshopacr.azurecr.io/movieshop/${{ matrix.app }}:${{ needs.changes.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.changes.outputs.sha }}
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # A build az ACR-ben fut (ACR Tasks), nem a GitHub-futón
+      - name: Image build az Azure Container Registryben
+        run: |
+          set -euo pipefail
+          BUILD_ARGS=""
+          # A frontend az API címét build időben kapja meg
+          if [ "${{ matrix.app }}" = "frontend" ]; then
+            BUILD_ARGS="--build-arg VITE_API_URL=$GATEWAY_URL"
+          fi
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "movieshop/${{ matrix.app }}:${{ needs.changes.outputs.sha }}" \
+            --file "${{ matrix.context }}/${{ matrix.dockerfile }}" \
+            $BUILD_ARGS \
+            "${{ matrix.context }}"
+
+      - name: Kitelepítés a Container Appsba
+        run: |
+          az containerapp update -n "${{ matrix.app }}" -g "$RESOURCE_GROUP" --image "$IMAGE" \
+            --query "properties.latestRevisionName" -o tsv
+
+      - name: Várakozás, amíg az új revízió kész
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            APP_JSON=$(az containerapp show -n "${{ matrix.app }}" -g "$RESOURCE_GROUP" -o json)
+            LATEST=$(echo "$APP_JSON" | jq -r '.properties.latestRevisionName // ""')
+            READY=$(echo "$APP_JSON" | jq -r '.properties.latestReadyRevisionName // ""')
+            STATE=$(echo "$APP_JSON" | jq -r '.properties.provisioningState // ""')
+            echo "[$i] legújabb: $LATEST · kész: $READY · állapot: $STATE"
+            if [ "$LATEST" = "$READY" ]; then echo "✔ $LATEST kész"; exit 0; fi
+            REV_STATE=$(az containerapp revision show -n "${{ matrix.app }}" -g "$RESOURCE_GROUP" --revision "$LATEST" \
+              --query "properties.provisioningState" -o tsv 2>/dev/null || true)
+            if [ "$REV_STATE" = "Failed" ]; then echo "::error::A(z) $LATEST revízió nem indult el"; exit 1; fi
+            sleep 10
+          done
+          echo "::error::A revízió 10 percen belül sem lett kész"; exit 1
+
+  smoke-test:
+    name: Füstteszt a felhőben
+    needs: [changes, deploy]
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: MovieShop/e2e
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.changes.outputs.sha }}
+
+      # A szolgáltatások nullára skálázódnak, az adatbázis is alhat: előbb mindet fel kell ébreszteni.
+      # Bármely nem-5xx válasz azt jelzi, hogy a kérés elérte a szolgáltatást.
+      - name: Bemelegítés – minden szolgáltatás felébresztése
+        run: |
+          set -u
+          PATHS="/api/Movie /api/Category /api/Auction /api/ShoppingCart /api/User/profile /api/Chat/ask"
+          for P in $PATHS; do
+            for i in $(seq 1 24); do
+              CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$GATEWAY_URL$P" || echo 000)
+              echo "$P → $CODE"
+              if [ "$CODE" != "000" ] && [ "$CODE" -lt 500 ]; then break; fi
+              sleep 10
+            done
+          done
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$FRONTEND_URL/")
+          echo "frontend → $CODE"; [ "$CODE" = "200" ]
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: MovieShop/e2e/package-lock.json
+
+      - run: npm ci
+
+      - name: API E2E tesztek a felhős gateway ellen
+        env:
+          E2E_API_URL: ${{ env.GATEWAY_URL }}
+          E2E_BASE_URL: ${{ env.FRONTEND_URL }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_EVENT_TIMEOUT_MS: "90000"
+        run: npx playwright test --project=api
+
+      - name: Playwright-riport feltöltése
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-smoke-test-report
+          path: MovieShop/e2e/playwright-report
+          retention-days: 14

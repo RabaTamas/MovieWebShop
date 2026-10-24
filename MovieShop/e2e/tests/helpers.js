@@ -43,7 +43,10 @@ export async function deleteUser(api, adminToken, userId) {
  * Végleges konzisztencia: az eseményeknek időbe telik végigmenni a RabbitMQ-n.
  * A feltételt másodpercenként újraellenőrzi, legfeljebb `timeoutMs`-ig.
  */
-export async function eventually(check, { timeoutMs = 20_000, message } = {}) {
+// A felhőben a nullára skálázott fogyasztónak előbb fel kell ébrednie, ott hosszabb várakozás kell
+const EVENT_TIMEOUT_MS = Number(process.env.E2E_EVENT_TIMEOUT_MS ?? 20_000);
+
+export async function eventually(check, { timeoutMs = EVENT_TIMEOUT_MS, message } = {}) {
     await expect
         .poll(async () => {
             try {

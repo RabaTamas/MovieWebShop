@@ -358,7 +358,21 @@ az containerapp update -n catalogservice -g movieshop-cloud-rg \
 
 > A `max-replicas 1` nem véletlen: a Watch Party SignalR hubja is ebben a service-ben fut, és több példányon szétcsúszna.
 
-**Újratelepítés** (egyetlen service frissítése):
+**Automatikus kitelepítés (CD).** A [.github/workflows/cd.yml](.github/workflows/cd.yml) akkor indul, ha a CI a `main` ágon zöld lett:
+
+1. **Változásfigyelés** — minden Container App image-címkéje az a commit-SHA, amelyből épült; ehhez képest nézi a workflow, melyik szolgáltatás kódja változott. A `Contracts` vagy a `ServiceDefaults` változása mind a hat backend-szolgáltatást érinti.
+2. **Build az ACR-ben** (`az acr build`) a megváltozott szolgáltatásokra, `<commit-SHA>` címkével; a frontend a felhős gateway címét build-argumentumként kapja.
+3. **Kitelepítés** (`az containerapp update --image`), majd várakozás, amíg az új revízió kész.
+4. **Füstteszt**: minden szolgáltatás felébresztése, utána a Playwright API-tesztek a felhős gateway ellen.
+
+Az Azure-ba a GitHub OIDC-vel, tárolt jelszó nélkül jelentkezik be (`movieshop-github-cd` alkalmazásregisztráció, `Contributor` csak a `movieshop-cloud-rg`-n). Kézzel is indítható (Actions → CD → Run workflow, opcionálisan minden szolgáltatás újraépítésével). Visszaállítás egy korábbi image-re: Actions → **Rollback** (szolgáltatás + címke).
+
+| GitHub secret | Tartalom |
+|---|---|
+| `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` | az alkalmazásregisztráció, a bérlő és az előfizetés azonosítója |
+| `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` | a felhős admin fiók a füstteszthez |
+
+**Kézi újratelepítés** (egyetlen service frissítése, CD nélkül):
 
 ```bash
 # A services/ mappából — a kép a felhőben épül, nem kell helyben Docker

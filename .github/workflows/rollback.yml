@@ -1,0 +1,40 @@
+name: Rollback
+
+# Kézi visszaállítás egy korábbi, már az ACR-ben lévő image-re (commit SHA vagy régi címke, pl. v3).
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Szolgáltatás"
+        type: choice
+        options: [userservice, catalogservice, orderservice, auctionservice, chatservice, gateway, frontend]
+      tag:
+        description: "Image-címke (commit SHA vagy pl. v3)"
+        type: string
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: A címke létezésének ellenőrzése
+        run: |
+          az acr repository show-tags -n movieshopacr --repository "movieshop/${{ inputs.app }}" -o tsv \
+            | grep -qx "${{ inputs.tag }}" \
+            || { echo "::error::Nincs ilyen címke: movieshop/${{ inputs.app }}:${{ inputs.tag }}"; exit 1; }
+
+      - name: Visszaállítás
+        run: |
+          az containerapp update -n "${{ inputs.app }}" -g movieshop-cloud-rg \
+            --image "movieshopacr.azurecr.io/movieshop/${{ inputs.app }}:${{ inputs.tag }}" \
+            --query "properties.latestRevisionName" -o tsv
