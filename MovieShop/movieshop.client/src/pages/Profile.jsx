@@ -32,7 +32,8 @@ const Profile = () => {
 
     useEffect(() => {
         if (!token) {
-            setError("No authentication token found");
+            // 401 utáni kijelentkezéskor a token null lesz: a pontosabb hibaüzenet maradjon meg
+            setError(prev => prev || "No authentication token found");
             setIsLoading(false);
             return;
         }

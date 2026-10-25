@@ -126,8 +126,8 @@ const WatchMovie = () => {
     }, [movieId, token]);
 
     // Progress mentés helper - keepalive:true biztosítja hogy navigáláskor is lefut
-    const saveProgress = (useKeepalive = false) => {
-        const video = videoRef.current;
+    // A videóelem paraméterként is átadható: lecsatoláskor a ref már null, mire a takarítás lefut
+    const saveProgress = (useKeepalive = false, video = videoRef.current) => {
         if (!video || video.currentTime < 1) return;
 
         fetch(`${API_BASE_URL}/api/Movie/${movieId}/progress`, {
@@ -267,7 +267,7 @@ const WatchMovie = () => {
             video.removeEventListener('loadedmetadata', onMetadataLoaded);
             video.removeEventListener('pause', onPause);
             clearInterval(saveIntervalRef.current);
-            saveProgress(true); // keepalive=true: navigáláskor is lefut
+            saveProgress(true, video); // keepalive=true: navigáláskor is lefut
             video.pause();
         };
     }, [streamingData, token]); // savedProgress NINCS itt - ref-et használunk helyette

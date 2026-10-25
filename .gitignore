@@ -73,3 +73,6 @@ Desktop.ini
 # (A bin/ alatti appsettings.json másolata korábban valódi kulcsokat vitt magával.)
 [Bb]in/
 [Oo]bj/
+
+# Helyi tesztfuttatás eredményei (TRX, coverlet lefedettségi XML) — a CI artefaktumként őrzi meg őket
+[Tt]est[Rr]esults/

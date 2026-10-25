@@ -365,7 +365,7 @@ az containerapp update -n catalogservice -g movieshop-cloud-rg \
 3. **Kitelepítés** (`az containerapp update --image`), majd várakozás, amíg az új revízió kész.
 4. **Füstteszt**: minden szolgáltatás felébresztése, utána a Playwright API-tesztek a felhős gateway ellen.
 
-Az Azure-ba a GitHub OIDC-vel, tárolt jelszó nélkül jelentkezik be (`movieshop-github-cd` alkalmazásregisztráció, `Contributor` csak a `movieshop-cloud-rg`-n). Kézzel is indítható (Actions → CD → Run workflow, opcionálisan minden szolgáltatás újraépítésével). Visszaállítás egy korábbi image-re: Actions → **Rollback** (szolgáltatás + címke).
+Az Azure-ba a GitHub OIDC-vel, tárolt jelszó nélkül jelentkezik be (`movieshop-github-cd` alkalmazásregisztráció, `Contributor` csak a `movieshop-cloud-rg`-n). Kézzel is indítható (Actions → CD → Run workflow, opcionálisan minden szolgáltatás újraépítésével). Visszaállítás egy korábbi image-re: Actions → **Rollback** (szolgáltatás + címke). Részletes leírás: [MovieShop/CICD.md](MovieShop/CICD.md).
 
 | GitHub secret | Tartalom |
 |---|---|
@@ -441,7 +441,6 @@ A teljes fejezetleírás — eszközválasztás és indoklás, PromQL-lekérdez�
 
 A következő félévre tervezett irányok:
 
-- **CI/CD (GitHub Actions)** — a felhős telepítés jelenleg kézi lépésekkel történik (lásd [Felhőalapú telepítés](#felhőalapú-telepítés-azure)); a `main` branchre pusholt változások automatikus újraépítése és telepítése hátravan
 - **Redis backplane** — a SignalR hubok és a chatbot munkamenetei jelenleg memóriában élnek, ezért a service-ek egyetlen példányra korlátozottak
 - **Redis cache** a gyakran lekérdezett adatokra (népszerű filmek, kategóriák, chatbot kontextus)
 - **TMDB-válaszok gyorsítótárazása** — a `GET /api/Movie/{id}` végpont minden egyes kérésnél szinkron TMDB-hívást csinál, cache nélkül; a pontszám és a megjelenési dátum naponta egyszeri frissítése is elég lenne

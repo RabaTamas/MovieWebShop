@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MovieShop.ServiceDefaults\MovieShop.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using MovieShop.CatalogService.Models;
@@ -26,18 +27,50 @@ public class ElasticsearchSyncInterceptor : SaveChangesInterceptor
         _logger = logger;
     }
 
+    // A SavedChanges idején az EF már elfogadta a változásokat (minden entitás Unchanged),
+    // ezért a megváltozott filmeket a mentés ELŐTT kell rögzíteni.
+    private readonly ConditionalWeakTable<DbContext, List<(Movie Movie, bool Removed)>> _pending = new();
+
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        if (eventData.Context is { } context)
+        {
+            var changed = context.ChangeTracker.Entries<Movie>()
+                .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+                .Select(e => (e.Entity, e.State == EntityState.Deleted))
+                .ToList();
+
+            _pending.AddOrUpdate(context, changed);
+        }
+
+        return ValueTask.FromResult(result);
+    }
+
+    public override Task SaveChangesFailedAsync(DbContextErrorEventData eventData, CancellationToken cancellationToken = default)
+    {
+        if (eventData.Context is { } context)
+            _pending.Remove(context);
+
+        return Task.CompletedTask;
+    }
+
     public override ValueTask<int> SavedChangesAsync(
         SaveChangesCompletedEventData eventData,
         int result,
         CancellationToken cancellationToken = default)
     {
         var context = eventData.Context;
-        if (context == null)
+        if (context == null || !_pending.TryGetValue(context, out var pending))
             return ValueTask.FromResult(result);
 
-        var changedMovies = context.ChangeTracker.Entries<Movie>()
-            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
-            .Select(e => (e.Entity.Id, IsDeleted: e.State == EntityState.Deleted || e.Entity.IsDeleted))
+        _pending.Remove(context);
+
+        // Az új filmek azonosítója csak a mentés után ismert, ezért itt olvassuk ki
+        var changedMovies = pending
+            .Select(p => (p.Movie.Id, IsDeleted: p.Removed || p.Movie.IsDeleted))
             .ToList();
 
         if (changedMovies.Count == 0)

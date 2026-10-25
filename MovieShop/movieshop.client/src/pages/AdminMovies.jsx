@@ -104,7 +104,7 @@ const AdminMovies = () => {
             });
 
             if (!response.ok) {
-                handleApiError(response, "delete");
+                await handleApiError(response, "delete");
                 return;
             }
 
@@ -128,7 +128,7 @@ const AdminMovies = () => {
             });
 
             if (!response.ok) {
-                handleApiError(response, "restore");
+                await handleApiError(response, "restore");
                 return;
             }
 

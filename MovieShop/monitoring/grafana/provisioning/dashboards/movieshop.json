@@ -57,7 +57,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "clamp_max(sum by (service) (rate(http_requests_received_total{code=~\"5..\"}[1m])) / sum by (service) (rate(http_requests_received_total[1m])), 1)",
+          "expr": "clamp_max((sum by (service) (rate(http_requests_received_total{code=~\"5..\"}[1m])) or sum by (service) (rate(http_requests_received_total[1m])) * 0) / sum by (service) (rate(http_requests_received_total[1m])), 1)",
           "legendFormat": "{{service}}"
         }
       ]

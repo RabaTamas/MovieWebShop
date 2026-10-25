@@ -32,8 +32,18 @@ jobs:
     defaults:
       run:
         working-directory: MovieShop/services
+    # Az Azure Blob Storage-ot az Azurite emulátor helyettesíti a Blob-tesztekhez
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
     steps:
       - uses: actions/checkout@v4
+
+      # A HLS-transzkódolás tesztje valódi FFmpeg-gel fut
+      - name: FFmpeg telepítése
+        run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -55,6 +65,7 @@ jobs:
         run: >
           dotnet test MovieShop.Microservices.sln --no-build --configuration Release
           --logger trx --results-directory TestResults
+          --settings tests/coverage.runsettings
           --collect:"XPlat Code Coverage"
 
       - name: Teszteredmények és lefedettség feltöltése

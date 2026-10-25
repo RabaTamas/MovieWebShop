@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lefedettségmérés a services mappából:
+       dotnet test MovieShop.Microservices.sln -s tests/coverage.runsettings (collect: XPlat Code Coverage)
+     Kizárva: generált EF Core migrációk és az indítókód (Program.cs), az utóbbit az E2E tesztek fedik. -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[MovieShop.*]*</Include>
+          <Exclude>[MovieShop.*.Tests]*</Exclude>
+          <ExcludeByFile>**/Migrations/*.cs,**/Program.cs</ExcludeByFile>
+          <!-- CompilerGeneratedAttribute NEM: az async metódusok törzse fordító által generált osztályba kerül -->
+          <ExcludeByAttribute>GeneratedCodeAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

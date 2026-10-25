@@ -59,8 +59,11 @@ public class CategoryService : ICategoryService
     {
         try
         {
+            // Ugyanazzal a levágott névvel hasonlítunk, amivel mentünk — különben a
+            // „Sci-Fi ” a meglévő „Sci-Fi” mellé második kategóriaként kerülne be
+            var name = categoryDto.Name.Trim();
             var exists = await _context.Categories
-                .AnyAsync(c => c.Name.ToLower() == categoryDto.Name.ToLower());
+                .AnyAsync(c => c.Name.ToLower() == name.ToLower());
 
             if (exists)
             {
@@ -68,7 +71,7 @@ public class CategoryService : ICategoryService
                 return false;
             }
 
-            var category = new Category { Name = categoryDto.Name.Trim() };
+            var category = new Category { Name = name };
 
             await _context.Categories.AddAsync(category);
             await _context.SaveChangesAsync();
@@ -101,8 +104,9 @@ public class CategoryService : ICategoryService
                 return false;
             }
 
+            var name = categoryDto.Name.Trim();
             var nameTaken = await _context.Categories
-                .AnyAsync(c => c.Name.ToLower() == categoryDto.Name.ToLower() && c.Id != id);
+                .AnyAsync(c => c.Name.ToLower() == name.ToLower() && c.Id != id);
 
             if (nameTaken)
             {
@@ -112,7 +116,7 @@ public class CategoryService : ICategoryService
 
             var affectedMovieIds = category.Movies.Select(m => m.Id).ToList();
 
-            category.Name = categoryDto.Name.Trim();
+            category.Name = name;
             await _context.SaveChangesAsync();
 
             foreach (var movieId in affectedMovieIds)
