@@ -1,7 +1,12 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
+import { MotionGlobalConfig } from "motion/react";
 import { hls, pwa, signalr, stripe } from "./fakes";
+
+// Az animációk azonnal a végállapotba ugranak: a kilépő elemek (AnimatePresence) nem maradnak
+// a DOM-ban az animáció idejéig, így a tesztek eredménye nem függ a gép terheltségétől
+MotionGlobalConfig.skipAnimations = true;
 
 // Böngészőn kívül nem futtatható külső könyvtárak (ld. fakes.jsx)
 vi.mock("@microsoft/signalr", async () => (await import("./fakes")).signalrModule);

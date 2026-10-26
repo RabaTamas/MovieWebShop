@@ -67,11 +67,11 @@ describe("usePushNotifications + push-felületek", () => {
         expect(api.find("POST", "/api/Push/subscribe")[0].body).toEqual({ endpoint: "https://push.example/abc", keys: { p256dh: "k", auth: "a" } });
     });
 
-    it("PushPrompt: hiba esetén toast; a bezárás megjegyződik", async () => {
+    it("PushPrompt: megtagadott engedély után toast, és a felkérés eltűnik", async () => {
         window.Notification.requestPermission = async () => "denied";
         mockApi({});
         const user = userEvent.setup();
-        const { unmount } = renderWithProviders(<PushPrompt />);
+        renderWithProviders(<PushPrompt />);
 
         await user.click(await screen.findByRole("button", { name: "Enable" }));
         await waitFor(() =>
@@ -79,6 +79,24 @@ describe("usePushNotifications + push-felületek", () => {
                 description: "Notifications are blocked. Allow them in your browser's site settings.",
             })
         );
+        // A felkérés csak "default" engedélynél látszik
+        await waitFor(() => expect(screen.queryByText("Never miss a premiere")).not.toBeInTheDocument());
+    });
+
+    it("PushPrompt: elutasított engedélykérő ablak után látható marad; a bezárás megjegyződik", async () => {
+        // A felhasználó bezárja a böngésző engedélykérő ablakát: az engedély "default" marad
+        window.Notification.requestPermission = async () => "default";
+        mockApi({});
+        const user = userEvent.setup();
+        const { unmount } = renderWithProviders(<PushPrompt />);
+
+        await user.click(await screen.findByRole("button", { name: "Enable" }));
+        await waitFor(() =>
+            expect(toast.error).toHaveBeenCalledWith("Could not enable notifications", {
+                description: "Notification permission was not granted.",
+            })
+        );
+        expect(screen.getByText("Never miss a premiere")).toBeInTheDocument();
 
         await user.click(screen.getByRole("button", { name: "Not now" }));
         await waitFor(() => expect(screen.queryByText("Never miss a premiere")).not.toBeInTheDocument());

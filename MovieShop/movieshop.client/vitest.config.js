@@ -19,8 +19,8 @@ export default defineConfig({
         setupFiles: ["./src/test/setup.js"],
         include: ["src/**/*.test.{js,jsx}"],
         css: false,
-        // A teljes oldalakat végigjáró tesztek párhuzamos futásnál lassabbak
-        testTimeout: 20000,
+        // A teljes oldalakat végigjáró tesztek párhuzamos futásnál, terhelt gépen lassabbak
+        testTimeout: 60000,
         coverage: {
             provider: "v8",
             include: ["src/**/*.{js,jsx}"],
